@@ -17,8 +17,7 @@ function render_edit_submission_page() {
          * submission_id (readonly), number (readonly), firstname, lastname, adress, zipcode, city, email, extra_information
          *
          */
-        $sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_type, submission.submission_date, 
-submission.organization, invoice.firstname, invoice.lastname, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, submission.parking_tickets, submission.reduction_code, submission.notes FROM {$wpdb->prefix}submissions AS submission INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id WHERE id = " . $_GET['id'];
+        $sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_type, submission.submission_date, submission.organization, invoice.firstname, invoice.lastname, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, submission.parking_tickets, submission.reduction_code, submission.notes FROM {$wpdb->prefix}submissions AS submission INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id WHERE id = " . $_GET['id'];
 
         $submission = $wpdb->get_results($sql, 'ARRAY_A');
 

@@ -34,7 +34,9 @@ class My_submission_list extends WP_List_Table
             case 'parking_tickets':
             case 'reduction_code':
             case 'notes':
+            case 'numberOfParticipants':
                 return $item[$column_name];
+                
             default:
                 return print_r($item, true); //Show the whole array for troubleshooting purposes
         }
@@ -57,6 +59,18 @@ class My_submission_list extends WP_List_Table
         return sprintf('%1$s %2$s', $item['submission_id'], $this->row_actions($actions));
     }
 
+    function column_numberOfParticipants($item) 
+    {
+        $path = 'admin.php?page=edit_participants';
+        $editUrl = admin_url($path);
+
+        $actions = array(
+            'bewerken' => sprintf('<a href="%s&action=%s&id=%s">Bewerken</a>', $editUrl, 'edit_participants', $item['id'])
+        );
+
+        return sprintf('%1$s %2$s', $item['numberOfParticipants'], $this->row_actions($actions));
+    }
+
     function column_active($item)
     {
         $actions = array(
@@ -75,6 +89,7 @@ class My_submission_list extends WP_List_Table
     function admin_header()
     {
         $page = (isset($_GET['page'])) ? esc_attr($_GET['page']) : false;
+
         if ('my_submissions_overview' != $page)
             return;
         echo '<style type="text/css">';
@@ -162,6 +177,7 @@ class My_submission_list extends WP_List_Table
             'number' => __('Factuur nummer', 'mylisttable'),
             'active' => __('Negeren in export', 'mylisttable'),
             'submission_type' => __('Type aanmelding', 'mylisttable'),
+            'numberOfParticipants' => __('Aantal deelnemers', 'mylisttable'),
             'submission_date' => __('Inzend datum', 'mylisttable'),
             'organization' => __('Organisatie', 'mylisttable'),
             'firstname' => __('Voornaam', 'mylisttable'),
@@ -261,7 +277,10 @@ class My_submission_list extends WP_List_Table
         global $wpdb;
         $sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_type, submission.submission_date, 
 submission.organization, invoice.firstname, invoice.lastname, submission.price, submission.price_tax, submission.parking_tickets, submission.reduction_code, 
-submission.notes, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information FROM {$wpdb->prefix}submissions AS submission INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id";
+submission.notes, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, 
+(SELECT COUNT(*) FROM {$wpdb->prefix}submission_participants p WHERE p.submission_id = invoice.submission_id) as numberOfParticipants
+FROM {$wpdb->prefix}submissions AS submission 
+INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id";
 
         if (!empty($_REQUEST['orderby'])) {
             $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
@@ -277,4 +296,5 @@ submission.notes, invoice.adress, invoice.zipcode, invoice.city, invoice.email, 
         $submissionCollection = $result;
         return $result;
     }
+
 } //class

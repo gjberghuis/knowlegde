@@ -182,20 +182,7 @@ function processSubmission($entry)
     $dbSubmissionOrganization = $entry['16'];
 
     global $dbNumberParkingTickets;
-    $dbNumberParkingTickets = 0;
-
-    if ($dbSubmissionType == 'groep') {
-        if (!empty($entry[27])) {
-            $dbNumberParkingTickets = $entry[27];
-        }
-    } else if ($dbSubmissionType == 'individu') {
-        if (!empty($entry[22]) && $entry[22] == 'Ja') {
-            $dbNumberParkingTickets = 1;
-        } else {
-            $dbNumberParkingTickets = 0;
-        }
-    }
-
+    
     global $dbReductionCode;
     if (!empty($entry[21])) {
         $reductionCode = $entry[21];
@@ -282,6 +269,9 @@ function processInvoicePaymentFields($entry)
 
 function processParticipants($entry, $form) {
     global $dbParticipants;
+    global $dbNumberParkingTickets;
+    $dbNumberParkingTickets = 0;
+
     $dbParticipants = [];
     // The main participant is the non repeater participant
     $mainParticipant = [];
@@ -295,6 +285,13 @@ function processParticipants($entry, $form) {
 
     if (!empty($entry[40])) {
         $mainParticipant['Telefoon'] = $entry[40];
+    }
+
+    if (!empty($entry[44])) {
+        $mainParticipant['Parkeerticket (Kosten 10 euro per ticket) *'] = $entry[44];
+        if ($entry[44] == 'Ja') {
+            $dbNumberParkingTickets++;
+        }
     }
     $dbParticipants[] = $mainParticipant;
 
@@ -333,6 +330,11 @@ function processParticipants($entry, $form) {
                     }
                 }
             }
+            
+            if($participant['Parkeerticket (Kosten 10 euro per ticket) *'] == 'Ja') {
+                $dbNumberParkingTickets++;
+            } 
+
             $dbParticipants[] = $participant;
 
          //   array_push($repeats, $singleRepeat);
@@ -633,7 +635,8 @@ function saveSubmission()
                 'submission_id' => $dbSubmissionId,
                 'name' => $part['Naam'],
                 'email' => $part['E-mailadres'],
-                'phone' => $part['Telefoon']
+                'phone' => $part['Telefoon'],
+                'parkingticket' => $part['Parkeerticket (Kosten 10 euro per ticket) *'] == 'Ja' ? 1 : 0
             )
         );
     }

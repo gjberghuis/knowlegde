@@ -456,7 +456,7 @@ $settings = $wpdb->get_results($query);
                 <td align="right">6 %</td>
                 <td align="right">€ <?php echo $payment_details[0]->food_fee_btw  ?></td>
             </tr>
-            [gravityforms action="conditional" merge_tag="{Parkeerticket:22}" condition="is" value="ja"]
+            <?php if($submission[0]->parking_tickets && count($submission[0]->parking_tickets) > 0) : ?>
             <tr>
                 <td>Parkeerticket</td>
                 <td align="right"><?php echo $submission[0]->parking_tickets ?>,00</td>
@@ -464,7 +464,7 @@ $settings = $wpdb->get_results($query);
                 <td align="right">21 %</td>
                 <td align="right">€ <?php echo $payment_details[0]->parking_fee_btw  ?></td>
             </tr>
-            [/gravityforms]
+            <?php endif; ?>
         </table>
     </div>
 
