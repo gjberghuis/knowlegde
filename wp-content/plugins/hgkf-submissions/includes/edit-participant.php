@@ -93,7 +93,7 @@ function render_edit_participant_page() {
                     echo '<label for="phone" style="margin-right: 20px;">Telefoon</label>';
                     echo '</td>';
                     echo '<td>';
-                    echo '<textarea type="text" style="width:300px;" name="phonenotes">' .  $participant->phone . '</textarea>';
+                    echo '<textarea type="text" style="width:300px;" name="phone">' .  $participant->phone . '</textarea>';
                     echo '</td>';
                 echo '</tr>';
                 echo '<tr>';
