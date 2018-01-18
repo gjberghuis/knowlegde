@@ -53,7 +53,7 @@ class participants_list extends WP_List_Table
         'name'=>__('Naam'),
         'email'=>__('Email'), 
         'phone'=>__('Telefoon'),    
-        'parking_ticket'=>__('Parkeerticket')
+        'parkingticket'=>__('Parkeerticket')
         );
     }
 
@@ -88,7 +88,7 @@ class participants_list extends WP_List_Table
             case 'name':
             case 'email':
             case 'phone':
-            case 'parking_ticket':
+            case 'parkingticket':
                 return $item[ $column_name ];
             default:
                 return print_r($item, true); //Show the whole array for troubleshooting purposes
