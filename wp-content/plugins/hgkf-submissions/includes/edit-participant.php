@@ -105,7 +105,7 @@ function render_edit_participant_page() {
                 if ($participant->parkingticket == 1) {
                     $checked = true;                
                 }
-                echo '<input type="checkbox" name="parkingticket" value="yes" checked="' . $checked .'"/>';
+                echo '<input type="checkbox" name="parkingticket" value="yes" '. ($checked ? checked : "") .'/>';
                 echo '</td>';
             echo '</tr>';
                 echo '<tr><td><br/></td></tr></table>';
