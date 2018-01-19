@@ -349,7 +349,7 @@ add_action('admin_init', 'convert_to_csv');
 function convert_to_csv()
 { 
     if (isset($_POST['download_participants']) || isset($_POST['download_invoices_new'])) {
-        $downloadParticipantsFields = array('submission_type','submission_date','organization','reduction_code','notes','participant_firstname','participant_lastname','participant_email' );
+        $downloadParticipantsFields = array('submission_type','submission_date','organization','reduction_code','notes');
         $downloadInvoicesFields = array('submission_date','organization','reduction_code','notes','book_nr','debiteur_nr','cost_post','description','follow_nr',
         'firstname','lastname','adress','zipcode','city','email','extra_information','expiration_days');
    
@@ -396,6 +396,7 @@ function convert_to_csv()
             $header[] = "participant_lastname";
             $header[] = "participant_email";
             $header[] = "participant_phone";
+            $header[] = "participant_parkingticket";
         } elseif (isset($_POST['download_invoices_new'])) {
             $header[] = "payment_event";
             $header[] = "payment_row_description";
@@ -458,6 +459,7 @@ function convert_to_csv()
                     $lineArray[] = $lastnameParticipant;
                     $lineArray[] = $participantArray['email'];
                     $lineArray[] = $participantArray['phone'];
+                    $lineArray[] = $participantArray['parkingticket'];
 
                     /** default php csv handler **/
                     fputcsv($f, $lineArray, ';');
