@@ -48,7 +48,7 @@ $dbParkingPricePartTotal;
 $dbFoodPartPriceLow;
 $dbFoodPartPriceLowBtw;
 $dbFoodPartPriceLowTotal;
-
+$dbFreeFieldsCollection;
 $dbParticipants;
 
 // SETTINGS VARIABLES
@@ -96,6 +96,9 @@ function processGravityEntryData($entry, $form)
 
         processPaymentFields($entry);
         debug_to_console("Processing Payment completed");
+
+        processFreeFields($entry, $form);
+        debug_to_console("Processing Free fields completed");
 
         saveSubmission();
         debug_to_console("Saving entry completed");
@@ -460,6 +463,24 @@ function processPaymentFields($entry)
     $dbTotalPriceBtw = ($rounded_total_price + $rounded_btw_part_low + $rounded_btw_part_high) / 100;
 }
 
+function processFreeFields($entry, $form)
+{
+    global $dbFreeFieldsCollection;
+    $dbFreeFieldsCollection = [];
+    // displays the types of every field in the form
+    foreach ( $form['fields'] as $field ) {
+        if ($field->adminLabel == 'free_field') {
+            if (!empty($entry[$field->id])) {
+                $freeField = [];
+                $freeField['label'] = $field->label;
+                $freeField['value'] = $entry[$field->id];
+                
+                $dbFreeFieldsCollection[] = $freeField;
+            }
+        }
+    }
+}
+
 function saveSubmission()
 {
     global $dbSubmissionId;
@@ -507,6 +528,7 @@ function saveSubmission()
     global $dbFoodPartPriceLow;
     global $dbFoodPartPriceLowBtw;
     global $dbFoodPartPriceLowTotal;
+    global $dbFreeFieldsCollection;
 
     global $wpdb;
 
@@ -642,6 +664,19 @@ function saveSubmission()
     }
 
     debug_to_console('Inserted participants into participants table');
+
+    global $dbFreeFieldsCollection;
+    foreach ($dbFreeFieldsCollection as $freeField) {
+         $wpdb->insert($wpdb->prefix . 'submission_free_fields',
+            array(
+                'submission_id' => $dbSubmissionId,
+                'label' => $freeField['label'],
+                'value' => $freeField['value']
+            )
+        );
+    }
+
+    debug_to_console('Inserted free fields in table');
 }
 
 function debug_to_console($data)
