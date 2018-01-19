@@ -350,7 +350,8 @@ function convert_to_csv()
 { 
     if (isset($_POST['download_participants']) || isset($_POST['download_invoices_new'])) {
         $downloadParticipantsFields = array('submission_type','submission_date','organization','reduction_code','notes','participant_firstname','participant_lastname','participant_email' );
-        $downloadInvoicesFields = array('submission_id','debiteur_nr','book_nr','cost_post','description','follow_nr','submission_type','submission_date','expiration_days','timestamp','organization','firstname','lastname','adress','zipcode','city','email','extra_information','parking_tickets','reduction_code','reduction_code','notes');
+        $downloadInvoicesFields = array('submission_date','organization','reduction_code','notes','book_nr','debiteur_nr','cost_post','description','follow_nr',
+        'firstname','lastname','adress','zipcode','city','email','extra_information','expiration_days');
    
         $date = '2016-11-01';
         $fromDate = date('Y-m-d', strtotime($date));
