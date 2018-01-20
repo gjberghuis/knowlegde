@@ -397,6 +397,18 @@ function convert_to_csv()
             $header[] = "participant_email";
             $header[] = "participant_phone";
             $header[] = "participant_parkingticket";
+         /*   $header[] = "free_field_1_label";
+            $header[] = "free_field_1_value";
+            $header[] = "free_field_2_label";
+            $header[] = "free_field_2_value";
+            $header[] = "free_field_3_label";
+            $header[] = "free_field_3_value";
+            $header[] = "free_field_4_label";
+            $header[] = "free_field_4_value";
+            $header[] = "free_field_5_label";
+            $header[] = "free_field_5_value";
+            $header[] = "free_field_6_label";
+            $header[] = "free_field_6_value";*/
         } elseif (isset($_POST['download_invoices_new'])) {
             $header[] = "payment_event";
             $header[] = "payment_row_description";
@@ -438,7 +450,7 @@ function convert_to_csv()
                 $submissionId = $submissionTempArray['submission_id'];
 
                 $submissionsOParticipants = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}submission_participants where submission_id = " . $submissionId);
-
+               
                 foreach ($submissionsOParticipants as $participant) {
                     $participantArray = (array)$participant;
 
@@ -460,10 +472,22 @@ function convert_to_csv()
                     $lineArray[] = $participantArray['email'];
                     $lineArray[] = $participantArray['phone'];
                     $lineArray[] = $participantArray['parkingticket'];
-
-                    /** default php csv handler **/
-                    fputcsv($f, $lineArray, ';');
                 }
+
+               /* $freeFieldResults = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}submission_free_fields WHERE submission_id = " . $submissionId);
+              
+                if (count($freeFieldResults) > 0) {
+                    
+                    for ($i = 0; $i <= count($freeFieldResults); $i++) {
+                        if ($i < 6) {
+                            $lineArray[] = $freeFieldResults[i]->label;
+                            $lineArray[] = $freeFieldResults[i]->value;
+                        }
+                    }
+                } */ 
+
+                 /** default php csv handler **/
+                 fputcsv($f, $lineArray, ';'); 
             } elseif (isset($_POST['download_invoices_new'])) {
                 $submissionId = $submissionTempArray['submission_id'];
                 $submissionPaymentDetails = $wpdb->get_results("SELECT event as payment_event, row_description as payment_row_description, price as payment_price,btw_type as payment_btw_type, tax as payment_tax FROM {$wpdb->prefix}submission_crm_details where submission_id = " . $submissionId);
