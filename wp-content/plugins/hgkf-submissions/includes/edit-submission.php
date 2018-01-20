@@ -4,8 +4,6 @@ function render_edit_submission_page() {
     global $wpdb;
 
     if (isset($_GET['action']) && $_GET['action'] == 'edit_submission' && isset($_GET['id'])) {
-        $submission = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}submissions WHERE id = " . $_GET['id']);
-
         global $wpdb;
 
         /*
@@ -20,8 +18,10 @@ function render_edit_submission_page() {
         $sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_type, submission.submission_date, submission.organization, invoice.firstname, invoice.lastname, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, submission.parking_tickets, submission.reduction_code, submission.notes FROM {$wpdb->prefix}submissions AS submission INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id WHERE id = " . $_GET['id'];
 
         $submission = $wpdb->get_results($sql, 'ARRAY_A');
-
+     
         if (count($submission ) > 0) {
+            $freeFieldResults = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}submission_free_fields WHERE submission_id = " . $submission[0]['submission_id']);
+
             if (isset($_POST['save_submission'])) {
                 if (!empty($_POST['organization'])) {
                     $submission[0]["organization"] = $_POST['organization'];
@@ -222,8 +222,25 @@ function render_edit_submission_page() {
                     echo '<td>';
                     echo '<textarea style="width:300px;" name="extra_information">' . $submission[0]["extra_information"] . '</textarea>';
                     echo '</td>';
-                echo '</tr>';
-            echo '</table>';
+                    echo '<tr><td><br/></td></tr></table>';
+            echo '</fieldset>';
+            
+            if (count($freeFieldResults) > 0) {
+            echo '<fieldset><legend>Vrije velden:</legend><table></tr>';
+
+                foreach($freeFieldResults as $freeField) {
+                    echo '<tr>';
+                        echo '<td>';
+                        echo '<label for="' . $freeField->label . '" style="margin-right: 20px;">' . $freeField->label . '</label>';
+                        echo '</td>';
+                        echo '<td>';
+                        echo '<input type="text" disabled style="width:300px;" name="' . $freeField->label . '" value="' . $freeField->value . '"/>';
+                        echo '</td>';
+                    echo '</tr>';
+                }
+                echo '<tr><td><br/></td></tr></table>';
+            echo '</fieldset>';
+            }
             echo '<input type="submit" value="Bewerken" name="save_submission" />';
             echo '</form>';
         }
