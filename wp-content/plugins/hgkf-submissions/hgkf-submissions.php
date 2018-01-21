@@ -489,10 +489,11 @@ function convert_to_csv()
                  /** default php csv handler **/
                  fputcsv($f, $lineArray, ';'); 
             } elseif (isset($_POST['download_invoices_new'])) {
+
                 $submissionId = $submissionTempArray['submission_id'];
                 $submissionPaymentDetails = $wpdb->get_results("SELECT event as payment_event, row_description as payment_row_description, price as payment_price,btw_type as payment_btw_type, tax as payment_tax FROM {$wpdb->prefix}submission_crm_details where submission_id = " . $submissionId);
-
-                 foreach ($submissionPaymentDetails as $paymentDetail) {
+                
+                foreach ($submissionPaymentDetails as $paymentDetail) {
                     $paymentArray = (array)$paymentDetail;
                     
                     $lineArray = $submissionArray;
@@ -503,6 +504,7 @@ function convert_to_csv()
                 fputcsv($f, $submissionArray, ';');
             }
         }
+        
         fclose($f);
         exit;
     }

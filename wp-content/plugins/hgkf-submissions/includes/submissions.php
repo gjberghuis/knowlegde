@@ -59,7 +59,7 @@ class My_submission_list extends WP_List_Table
         return sprintf('%1$s %2$s', $item['submission_id'], $this->row_actions($actions));
     }
 
-    function column_numberOfParticipants($item) 
+    /*function column_numberOfParticipants($item) 
     {
         $path = 'admin.php?page=edit_participants';
         $editUrl = admin_url($path);
@@ -69,7 +69,7 @@ class My_submission_list extends WP_List_Table
         );
 
         return sprintf('%1$s %2$s', $item['numberOfParticipants'], $this->row_actions($actions));
-    }
+    }*/
 
     function column_active($item)
     {
@@ -130,8 +130,6 @@ class My_submission_list extends WP_List_Table
     {
         // check if a search was performed.
         $user_search_key = isset( $_REQUEST['s'] ) ? wp_unslash( trim( $_REQUEST['s'] ) ) : '';
-
-        echo $user_search_key;
 
         $columns = $this->get_columns();
         $hidden = array();
@@ -294,6 +292,7 @@ INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_i
 
         $result = $wpdb->get_results($sql, 'ARRAY_A');
         $submissionCollection = $result;
+
         return $result;
     }
 

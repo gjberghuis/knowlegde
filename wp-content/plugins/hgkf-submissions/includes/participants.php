@@ -12,19 +12,42 @@ class participants_list extends WP_List_Table
         ));
     }
 
+    function usort_reorder($a, $b)
+    {
+// If no sort, default to title
+        $orderby = (!empty($_GET['orderby'])) ? $_GET['orderby'] : 'invoice_number';
+// If no order, default to asc
+        $order = (!empty($_GET['order'])) ? $_GET['order'] : 'asc';
+// Determine sort order
+        $result = strcmp($a[$orderby], $b[$orderby]);
+// Send final sort direction to usort
+        return ($order === 'asc') ? $result : -$result;
+    }
+
     function prepare_participants()
     {
+         // check if a search was performed.
+         $user_search_key = isset( $_REQUEST['s'] ) ? wp_unslash( trim( $_REQUEST['s'] ) ) : '';
+
+
         $columns = $this->get_columns();
         $hidden = array();
         $sortable = $this->get_sortable_columns();
 
         $this->_column_headers = array($columns, $hidden, $sortable);
 
-        $this->items = self::get_participants();
+        $per_page = $this->get_items_per_page('submissions_per_page', 10);
+        $current_page = $this->get_pagenum();
+        $total_items = self::record_count();
+
+        $this->set_pagination_args(array(
+            'total_items' => $total_items,                  //WE have to calculate the total number of items
+            'per_page' => $per_page                     //WE have to determine how many items to show on a page
+        ));
+
+        $this->items = self::get_participants($per_page, $current_page);
 
         // check if a search was performed.
-        $user_search_key = isset( $_REQUEST['s'] ) ? wp_unslash( trim( $_REQUEST['s'] ) ) : '';
-
         if( $user_search_key ) {
             $this->items = $this->filter_table_data($this->items, $user_search_key );
         }
@@ -62,10 +85,10 @@ class participants_list extends WP_List_Table
      * @return array $sortable, the array of columns that can be sorted by the user
      */
     public function get_sortable_columns() {
-        return $sortable = array(
-        'submission_id'=>'submission_id',
-        'name'=>'name',
-        'email'=>'email'
+        return array(
+            'submission_id' => array('submission_id', false),
+            'name' => array('name', false),
+            'email' => array('email', false)
         );
     }
 
@@ -93,6 +116,20 @@ class participants_list extends WP_List_Table
             default:
                 return print_r($item, true); //Show the whole array for troubleshooting purposes
         }
+    }
+
+     /**
+     * Returns the count of records in the database.
+     *
+     * @return null|string
+     */
+    public static function record_count()
+    {
+        global $wpdb;
+
+        $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}submission_participants";
+
+        return $wpdb->get_var($sql);
     }
 
       /**
