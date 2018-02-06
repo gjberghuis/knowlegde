@@ -252,7 +252,7 @@ function processInvoicePaymentFields($entry)
     $dbInvoiceFileName = date('Ymd') . '_' . $dbInvoiceNumber . '_' . (!empty($dbSubmissionOrganization) ? $dbSubmissionOrganization : $dbInvoiceLastName);
 
     global $dbInvoiceDebiteurNr;
-    $dbInvoiceDebiteurNr = $invoice_count + 1600;
+    $dbInvoiceDebiteurNr = $invoice_count + 16000;
 
     global $dbInvoiceBookNr;
     $dbInvoiceBookNr = '71';
