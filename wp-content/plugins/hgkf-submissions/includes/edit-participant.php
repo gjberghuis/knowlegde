@@ -46,6 +46,11 @@ function render_edit_participant_page() {
             echo '<div class="wrap">';
 
             $path = 'admin.php?page=participants';
+
+            if (isset($_GET['submission_id'])) {
+                $path .= '&submission_id=' . $_GET['submission_id'];
+            }
+
             $url = admin_url($path);
             echo '<a href="' . $url . '">< Terug naar het deelnemers overzicht</a>';
             echo '<h2>Deelnemer bewerken</h2>';

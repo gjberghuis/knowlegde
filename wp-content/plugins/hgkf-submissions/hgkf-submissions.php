@@ -349,7 +349,7 @@ add_action('admin_init', 'convert_to_csv');
 function convert_to_csv()
 { 
     if (isset($_POST['download_participants']) || isset($_POST['download_invoices_new'])) {
-        $downloadParticipantsFields = array('submission_type','submission_date','organization','reduction_code','notes');
+        $downloadParticipantsFields = array('submission_id', 'submission_type','submission_date','organization','reduction_code','notes');
         $downloadInvoicesFields = array('submission_date','organization','reduction_code','notes','book_nr','debiteur_nr','cost_post','description','follow_nr',
         'firstname','lastname','adress','zipcode','city','email','extra_information','expiration_days');
    
@@ -472,6 +472,8 @@ function convert_to_csv()
                     $lineArray[] = $participantArray['email'];
                     $lineArray[] = $participantArray['phone'];
                     $lineArray[] = $participantArray['parkingticket'];
+
+  fputcsv($f, $lineArray, ';'); 
                 }
 
                /* $freeFieldResults = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}submission_free_fields WHERE submission_id = " . $submissionId);
@@ -487,13 +489,12 @@ function convert_to_csv()
                 } */ 
 
                  /** default php csv handler **/
-                 fputcsv($f, $lineArray, ';'); 
+               
             } elseif (isset($_POST['download_invoices_new'])) {
-
                 $submissionId = $submissionTempArray['submission_id'];
                 $submissionPaymentDetails = $wpdb->get_results("SELECT event as payment_event, row_description as payment_row_description, price as payment_price,btw_type as payment_btw_type, tax as payment_tax FROM {$wpdb->prefix}submission_crm_details where submission_id = " . $submissionId);
-                
-                foreach ($submissionPaymentDetails as $paymentDetail) {
+
+                 foreach ($submissionPaymentDetails as $paymentDetail) {
                     $paymentArray = (array)$paymentDetail;
                     
                     $lineArray = $submissionArray;
@@ -504,7 +505,6 @@ function convert_to_csv()
                 fputcsv($f, $submissionArray, ';');
             }
         }
-        
         fclose($f);
         exit;
     }

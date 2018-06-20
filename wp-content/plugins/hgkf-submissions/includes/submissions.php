@@ -59,17 +59,17 @@ class My_submission_list extends WP_List_Table
         return sprintf('%1$s %2$s', $item['submission_id'], $this->row_actions($actions));
     }
 
-    /*function column_numberOfParticipants($item) 
+    function column_numberOfParticipants($item) 
     {
-        $path = 'admin.php?page=edit_participants';
+        $path = 'admin.php?page=participants';
         $editUrl = admin_url($path);
 
         $actions = array(
-            'bewerken' => sprintf('<a href="%s&action=%s&id=%s">Bewerken</a>', $editUrl, 'edit_participants', $item['id'])
+            'bewerken' => sprintf('<a href="%s&action=%s&submission_id=%s">Bewerken</a>', $editUrl, 'participants', $item['submission_id'])
         );
 
         return sprintf('%1$s %2$s', $item['numberOfParticipants'], $this->row_actions($actions));
-    }*/
+    }
 
     function column_active($item)
     {
@@ -292,7 +292,6 @@ INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_i
 
         $result = $wpdb->get_results($sql, 'ARRAY_A');
         $submissionCollection = $result;
-
         return $result;
     }
 

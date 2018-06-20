@@ -48,6 +48,8 @@ class participants_list extends WP_List_Table
         $this->items = self::get_participants($per_page, $current_page);
 
         // check if a search was performed.
+        $user_search_key = isset( $_REQUEST['s'] ) ? wp_unslash( trim( $_REQUEST['s'] ) ) : '';
+
         if( $user_search_key ) {
             $this->items = $this->filter_table_data($this->items, $user_search_key );
         }
@@ -97,7 +99,7 @@ class participants_list extends WP_List_Table
         $editUrl = admin_url($path);
 
         $actions = array(
-            'edit'      => sprintf('<a href="%s&action=%s&id=%s">Edit</a>',$editUrl,'edit_participant',$item['id'])
+            'edit' => sprintf('<a href="%s&action=%s&id=%s&submission_id=%s">Bewerken</a>',$editUrl,'edit_participant',$item['id'],$_GET['submission_id'])
         );
 
         return sprintf('%1$s %2$s', $item['id'], $this->row_actions($actions) );
@@ -145,6 +147,11 @@ class participants_list extends WP_List_Table
         global $wpdb;
 
         $sql = "SELECT * FROM {$wpdb->prefix}submission_participants";
+
+        if (isset($_GET['submission_id'])) {
+            $sql .= ' WHERE submission_id = ' . $_GET['submission_id'];
+        }
+
         if (!empty($_REQUEST['orderby'])) {
             $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
             $sql .= !empty($_REQUEST['order']) ? ' ' . esc_sql($_REQUEST['order']) : ' ASC';

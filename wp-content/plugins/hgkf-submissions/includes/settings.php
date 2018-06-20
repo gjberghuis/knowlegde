@@ -150,30 +150,34 @@
     function saveSettings(){
         if (!empty($_POST) && isset($_POST['submit']))
         {
-            global $wpdb;
-            $wpdb->update($wpdb->prefix .'submission_settings',
-                array(
-                    'ticket_price_single' => $_POST['ticket_price_single'],
-                    'ticket_price_group' => $_POST['ticket_price_group'],
-                    'price_parkingticket' => $_POST['price_parkingticket'],
-                    'btw_low_number' => $_POST['btw_low_number'],
-                    'btw_low' => $_POST['btw_low'],
-                    'btw_high_number' => $_POST['btw_high_number'],
-                    'btw_high' => $_POST['btw_high'],
-                    'food_price' => $_POST['food_price'],
-                    'payment_detail_description_low_btw' => $_POST['payment_detail_description_low_btw'],
-                    'payment_detail_description_high_btw' => $_POST['payment_detail_description_high_btw'],
-                    'payment_detail_event_nr_low_btw' => $_POST['payment_detail_event_nr_low_btw'],
-                    'payment_detail_event_nr_high_btw' => $_POST['payment_detail_event_nr_high_btw'],
-                    'invoice_expiration_days' => $_POST['invoice_expiration_days'],
-                    'invoice_description_text' => $_POST['invoice_description_text']
-                ),
-                array(
-                    'preset' => 1
-                )
-            );
+            // extra check
+            if (!empty( $_POST['ticket_price_single']) && !empty($_POST['ticket_price_group'])) 
+            {
+                global $wpdb;
+                $wpdb->update($wpdb->prefix .'submission_settings',
+                    array(
+                        'ticket_price_single' => $_POST['ticket_price_single'],
+                        'ticket_price_group' => $_POST['ticket_price_group'],
+                        'price_parkingticket' => $_POST['price_parkingticket'],
+                        'btw_low_number' => $_POST['btw_low_number'],
+                        'btw_low' => $_POST['btw_low'],
+                        'btw_high_number' => $_POST['btw_high_number'],
+                        'btw_high' => $_POST['btw_high'],
+                        'food_price' => $_POST['food_price'],
+                        'payment_detail_description_low_btw' => $_POST['payment_detail_description_low_btw'],
+                        'payment_detail_description_high_btw' => $_POST['payment_detail_description_high_btw'],
+                        'payment_detail_event_nr_low_btw' => $_POST['payment_detail_event_nr_low_btw'],
+                        'payment_detail_event_nr_high_btw' => $_POST['payment_detail_event_nr_high_btw'],
+                        'invoice_expiration_days' => $_POST['invoice_expiration_days'],
+                        'invoice_description_text' => $_POST['invoice_description_text']
+                    ),
+                    array(
+                        'preset' => 1
+                    )
+                );
 
-            wp_redirect(admin_url()  . "?page=my_submissions_overview");
+                wp_redirect(admin_url()  . "?page=my_submissions_overview");
+            }
         }
     }
 

@@ -474,7 +474,7 @@ function processFreeFields($entry, $form)
                 $freeField = [];
                 $freeField['label'] = $field->label;
                 $freeField['value'] = $entry[$field->id];
-                
+
                 $dbFreeFieldsCollection[] = $freeField;
             }
         }
