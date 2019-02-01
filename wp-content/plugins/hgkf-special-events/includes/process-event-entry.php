@@ -43,28 +43,13 @@ $dbExpirationDate;
 $dbSubmissionDate;
 $dbSubmissionId;
 
-
-
-$dbInvoiceFirstName;
-$dbInvoiceLastName;
-$dbInvoiceAdress;
-$dbInvoiceZipcode;
-$dbInvoiceCity;
-$dbInvoiceEmail;
-$dbInvoiceExtraInformation;
-$dbInvoiceEventNr;
-$dbInvoiceFollowNumber;
-$dbInvoiceNumber;
-$dbInvoiceDebiteurNr;
-$dbInvoiceBookNr;
-$dbInvoiceCostPost;
-$dbInvoiceExpirationDays;
-$dbInvoiceDescriptionText;
-
+// generated fields
 $dbInvoiceBtwType;
 $dbInvoiceDescription;
 $dbInvoiceRowDescription;
-
+$dbInvoiceFollowNumber;
+$dbInvoiceNumber;
+$dbInvoiceDebiteurNr;
 $dbPricePartHigh;
 $dbPricePartHighBtw;
 $dbPricePartHighTotal;
@@ -416,15 +401,11 @@ function processInvoiceSpecialEventsPaymentFields($entry)
 
     global $dbInvoiceFileName;
     global $dbSubmissionOrganization;
-    global $dbInvoiceLastName;
-    $dbInvoiceFileName = date('Ymd') . '_' . $dbInvoiceNumber . '_' . (!empty($dbSubmissionOrganization) ? $dbSubmissionOrganization : $dbInvoiceLastName);
+    $dbInvoiceFileName = date('Ymd') . '_' . $dbInvoiceNumber . '_' . (!empty($dbSubmissionOrganization) ? $dbSubmissionOrganization : $lastNameInvoice);
 
     global $dbInvoiceDebiteurNr;
     global $dbInvoiceRelationNrStart;
     $dbInvoiceDebiteurNr = $invoice_count + $dbInvoiceRelationNrStart;
-
-    global $dbInvoiceBookNr;
-    $dbInvoiceBookNr = $dbInvoiceBookNr;
 
     global $dbInvoiceBtwType;
     $dbInvoiceBtwType = '2';
@@ -545,15 +526,7 @@ function saveSubmissionSpecialEvents()
     global $notes;
     global $dataSharing;
 
-    global $dbInvoiceFirstName;
-    global $dbInvoiceLastName;
-    global $dbInvoiceAdress;
-    global $dbInvoiceZipcode;
-    global $dbInvoiceCity;
-    global $dbInvoiceEmail;
     global $dbBtwPaymentDetailEventNrHighBtw;
-    global $dbInvoiceExtraInformation;
-    global $dbInvoiceEventNr;
     global $dbInvoiceNumber;
     global $dbInvoiceFileName;
     global $dbInvoiceDebiteurNr;
@@ -630,34 +603,34 @@ function saveSubmissionSpecialEvents()
     );
 
     debug_to_consoleSpecialEvents('Inserted invoice with submission id: ' . $dbSubmissionId);
-/*
+
     $wpdb->insert($wpdb->prefix . 'special_events_payment_details',
         array(
             'submission_id' => $dbSubmissionId,
             'entry_fee' => $dbTicketPricePart,
             'entry_fee_btw' => $dbTicketPricePartBtw,
             'entry_fee_total' => $dbTicketPricePartTotal,
-            'parking_fee' => $dbParkingPricePart,
-            'parking_fee_btw' => $dbParkingPricePartBtw,
-            'parking_fee_total' => $dbParkingPricePartTotal,
-            'food_fee' => $dbFoodPartPriceLow,
-            'food_fee_btw' => $dbFoodPartPriceLowBtw,
-            'food_fee_total' => $dbFoodPartPriceLowTotal,
-            'total_low' => $dbPricePartLow,
-            'total_low_btw' => $dbPricePartLowBtw,
-            'total_low_total' => $dbPricePartLowTotal,
+            //'parking_fee' => $dbParkingPricePart,
+            //'parking_fee_btw' => $dbParkingPricePartBtw,
+            //'parking_fee_total' => $dbParkingPricePartTotal,
+            //'food_fee' => $dbFoodPartPriceLow,
+            //'food_fee_btw' => $dbFoodPartPriceLowBtw,
+            //'food_fee_total' => $dbFoodPartPriceLowTotal,
+            //'total_low' => $dbPricePartLow,
+            //'total_low_btw' => $dbPricePartLowBtw,
+            //'total_low_total' => $dbPricePartLowTotal,
             'total_high' => $dbPricePartHigh,
             'total_high_btw' => $dbPricePartHighBtw,
             'total_high_total' => $dbPricePartHighTotal,
             'total' => $dbTotalPrice,
             'total_btw' => $dbTotalBtw,
             'total_total' => $dbTotalPriceBtw,
-            'membership_fee' => $dbMembershipPricePart,
-            'membership_fee_btw' => $dbMembershipPricePartBTW,
-            'membership_fee_total' => $dbMembershipPricePartTotal
+            //'membership_fee' => $dbMembershipPricePart,
+            //'membership_fee_btw' => $dbMembershipPricePartBTW,
+            //'membership_fee_total' => $dbMembershipPricePartTotal
         )
     );
-*/
+
     // First payment detail: insert the entree payment detail row (with btw high)
     global $dbPricePartHighTotal;
     global $dbPricePartHigh;

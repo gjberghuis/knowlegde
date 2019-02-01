@@ -25,10 +25,10 @@ function my_special_events_menu_items()
 {
     $hookSubmissions = add_menu_page('Special events', 'Special events', 'manage_options', 'my_special_events_overview', 'render_special_events_overview_page');
     add_submenu_page(null, 'Aanmelding bewerken', 'Aanmelding bewerken', 'manage_options', 'edit_submission', 'render_edit_special_event_submission_page');
-    add_submenu_page('my_special_events_overview', 'Deelnemers', 'Deelnemers', 'manage_options', 'participants', 'render_special_events_participants_page');
+    add_submenu_page('my_special_events_participants_overview', 'Deelnemers', 'Deelnemers', 'manage_options', 'participants', 'render_special_events_participants_page');
     add_submenu_page(null, 'Deelnemer bewerken', 'Deelnemer bewerken', 'manage_options', 'edit_participant', 'render_edit_special_events_participant_page');
   //  add_submenu_page('my_special_events_overview', 'Instellingen', 'Instellingen', 'manage_options', 'settings', 'render_special_events_settings_page');
-    add_submenu_page('my_special_events_overview', 'Instellingen', 'Instellingen', 'manage_options', 'special_events_settings', 'render_special_events_settings_overview_page');
+    add_submenu_page('my_special_events_settings', 'Instellingen', 'Instellingen', 'manage_options', 'special_events_settings', 'render_special_events_settings_overview_page');
     add_submenu_page(null, 'Instellingen toevoegen', 'Instellingen toevoegen', 'manage_options', 'add_special_events_settings', 'render_add_special_events_settings_page');
     add_submenu_page(null, 'Instellingen bewerken', 'Instellingen bewerken', 'manage_options', 'edit_special_events_settings', 'render_edit_special_events_settings_page');
   
@@ -625,11 +625,11 @@ function render_edit_special_events_settings_page() {
                     $settings[0]->payment_detail_description_high_btw = $_POST['payment_detail_description_high_btw'];
                 }
 
-                if (!empty($_POST['payment_detail_event_nr_low_btw']) || $_POST['payment_detail_event_nr_low_btw'] === 0 || $_POST['payment_detail_event_nr_low_btw'] == '0') {
+                if (!empty($_POST['payment_detail_event_nr_low_btw']) || $_POST['payment_detail_event_nr_low_btw'] == 0 || $_POST['payment_detail_event_nr_low_btw'] == '0') {
                     $settings[0]->payment_detail_event_nr_low_btw = $_POST['payment_detail_event_nr_low_btw'];
                 }
 
-                if (!empty($_POST['payment_detail_event_nr_high_btw']) || $_POST['payment_detail_event_nr_high_btw'] === 0 || $_POST['payment_detail_event_nr_low_btw'] == '0') {
+                if (!empty($_POST['payment_detail_event_nr_high_btw']) || $_POST['payment_detail_event_nr_high_btw'] == 0 || $_POST['payment_detail_event_nr_low_btw'] == '0') {
                     $settings[0]->payment_detail_event_nr_high_btw = $_POST['payment_detail_event_nr_high_btw'];
                 }
 
