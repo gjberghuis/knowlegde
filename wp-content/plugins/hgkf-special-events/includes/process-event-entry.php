@@ -4,11 +4,17 @@
 // field values of the gravity form entry
 $eventId;
 $nameParticipant;
+$firstNameParticipant;
+$lastNameParticipant;
 $emailParticipant;
 $phoneParticipant;
 $organization;
 $nameInvoice;
-$adressInvoice;
+$firstNameInvoice;
+$lastNameInvoice;
+$streetInvoice;
+$zipcodeInvoice;
+$cityInvoice;
 $emailInvoice;
 $reference;
 $notes;
@@ -58,7 +64,6 @@ $dbInvoiceDescriptionText;
 $dbInvoiceBtwType;
 $dbInvoiceDescription;
 $dbInvoiceRowDescription;
-$dbExpirationDate;
 
 $dbPricePartHigh;
 $dbPricePartHighBtw;
@@ -106,7 +111,10 @@ function get_value_by_adminlabel( $form, $entry, $label ) {
 	return false;
 }
 
-function get_name_value( $form, $entry) {
+function get_name_participant( $form, $entry) {
+    global $firstNameParticipant;
+    global $lastNameParticipant;
+
     foreach ( $form['fields'] as $field ) {
         $lead_key = $field->label;
 		if (strToLower( $lead_key ) === 'naam' ) {
@@ -114,12 +122,14 @@ function get_name_value( $form, $entry) {
                 foreach ($field->inputs as $input) {
                     if ($input['label'] === 'Voornaam') {
                         $name = $entry[$input['id']];
+                        $firstNameParticipant = $entry[$input['id']];
                     }
                     if ($input['label'] === 'Tussenvoegsel') {
                         $name = $name . ' ' . $entry[$input['id']];
                     }
                     if ($input['label'] === 'Achternaam') {
                         $name = $name . ' ' . $entry[$input['id']];
+                        $lastNameParticipant = $entry[$input['id']];         
                     }
                 }
             }
@@ -127,6 +137,62 @@ function get_name_value( $form, $entry) {
         }
     }
 }
+
+function get_name_invoice( $form, $entry) {
+    global $firstNameInvoice;
+    global $lastNameInvoice;
+
+    foreach ( $form['fields'] as $field ) {
+        $lead_key = $field->label;
+    
+		if (strToLower( $lead_key ) === 't.a.v.' ) {
+            if ($field->type == 'name') {
+                foreach ($field->inputs as $input) {
+                    if ($input['label'] === 'Voornaam') {
+                        $name = $entry[$input['id']];
+                        $firstNameInvoice = $entry[$input['id']];
+                    }
+                    if ($input['label'] === 'Tussenvoegsel') {
+                        $name = $name . ' ' . $entry[$input['id']];
+                    }
+                    if ($input['label'] === 'Achternaam') {
+                        $name = $name . ' ' . $entry[$input['id']];
+                        $lastNameInvoice = $entry[$input['id']];
+                    }
+                }
+            }
+            return $name;
+        }
+    }
+}
+
+function get_adres_invoice( $form, $entry) {
+    global $streetInvoice;
+    global $zipcodeInvoice;
+    global $cityInvoice;
+
+    foreach ( $form['fields'] as $field ) {
+        $lead_key = $field->label;
+    
+		if (strToLower( $lead_key ) === 'adres' ) {
+            if (strToLower($field->type) == 'address') {
+                foreach ($field->inputs as $input) {
+                    if (strToLower($input['label']) === 'straat + huisnummer') {
+                        $streetInvoice = $entry[$input['id']];
+                    }
+                    if (strToLower($input['label']) === 'postcode') {
+                        $zipcodeInvoice = $entry[$input['id']];
+                    }
+                    if (strToLower($input['label']) === 'plaats') {
+                        $cityInvoice = $entry[$input['id']];
+                    }
+                }
+            }
+            return $name;
+        }
+    }
+}
+
 
 /*
 * Use the gravity hook to process the data to our own tables
@@ -226,19 +292,19 @@ function processSpecialEventsFormFields($form, $entry) {
     global $phoneParticipant;
     global $organization;
     global $nameInvoice;
-    global $adressInvoice;
     global $emailInvoice;
     global $reference;
     global $notes;
     global $dataSharing;
 
     $eventId = get_value_by_label( $form, $entry, "Eventlabel" );
-    $nameParticipant = get_name_value( $form, $entry );
+    
+    $nameParticipant = get_name_participant( $form, $entry );
     $emailParticipant = get_value_by_label( $form, $entry, "E-mailadres" );
     $phoneParticipant = get_value_by_label( $form, $entry, "Telefoon" );
     $organization = get_value_by_label( $form, $entry, "Organisatie" );
-    $nameInvoice = get_value_by_label( $form, $entry, "T.a.v." );
-    $adressInvoice = get_value_by_label( $form, $entry, "Adres" );
+    $nameInvoice = get_name_invoice( $form, $entry );
+    get_adres_invoice( $form, $entry);
     $emailInvoice = get_value_by_label( $form, $entry, "E-mail" );
     $reference = get_value_by_label( $form, $entry, "Referentie" );
     $notes = get_value_by_label( $form, $entry, "Vraag of reactie" );
@@ -341,6 +407,7 @@ function processInvoiceSpecialEventsPaymentFields($entry)
     $invoice_count = $count + 1;
 
     global $dbInvoiceFollowNumber;
+    global $dbInvoiceFollowNumberPrefix;
     $dbInvoiceFollowNumber = $dbInvoiceFollowNumberPrefix . str_pad($invoice_count, 4, "0", STR_PAD_LEFT);
 
     global $dbInvoiceCostPost;
@@ -353,6 +420,7 @@ function processInvoiceSpecialEventsPaymentFields($entry)
     $dbInvoiceFileName = date('Ymd') . '_' . $dbInvoiceNumber . '_' . (!empty($dbSubmissionOrganization) ? $dbSubmissionOrganization : $dbInvoiceLastName);
 
     global $dbInvoiceDebiteurNr;
+    global $dbInvoiceRelationNrStart;
     $dbInvoiceDebiteurNr = $invoice_count + $dbInvoiceRelationNrStart;
 
     global $dbInvoiceBookNr;
@@ -461,12 +529,29 @@ function saveSubmissionSpecialEvents()
     global $dbSubmissionDate;
     global $dbSubmissionOrganization;
     global $dbNumberParkingTickets;
+
+    global $nameParticipant;
+    global $emailParticipant;
+    global $phoneParticipant;
+    global $organization;
+    global $nameInvoice;
+    global $streetInvoice;
+    global $zipcodeInvoice;
+    global $cityInvoice;
+    global $emailInvoice;
+    global $firstNameInvoice;
+    global $lastNameInvoice;
+    global $reference;
+    global $notes;
+    global $dataSharing;
+
     global $dbInvoiceFirstName;
     global $dbInvoiceLastName;
     global $dbInvoiceAdress;
     global $dbInvoiceZipcode;
     global $dbInvoiceCity;
     global $dbInvoiceEmail;
+    global $dbBtwPaymentDetailEventNrHighBtw;
     global $dbInvoiceExtraInformation;
     global $dbInvoiceEventNr;
     global $dbInvoiceNumber;
@@ -518,7 +603,7 @@ function saveSubmissionSpecialEvents()
 
     debug_to_consoleSpecialEvents('Inserted into: '. $wpdb->prefix . 'special_events' . ' submission with id: ' . $dbSubmissionId);
     debug_to_consoleSpecialEvents('Insert into table: ' . $wpdb->prefix . 'special_events_invoices');
-    /*
+  
     $wpdb->insert($wpdb->prefix . 'special_events_invoices',
         array(
             'submission_id' => $dbSubmissionId,
@@ -531,20 +616,19 @@ function saveSubmissionSpecialEvents()
             'row_description' => $dbInvoiceRowDescription,
             'follow_nr' => $dbInvoiceFollowNumber,
             'expiration_days' => $dbInvoiceExpirationDays,
-            'firstname' => $dbInvoiceFirstName,
-            'lastname' => $dbInvoiceLastName,
-            'adress' => $dbInvoiceAdress,
-            'zipcode' => $dbInvoiceZipcode,
-            'city' => $dbInvoiceCity,
-            'event_nr' => $dbInvoiceEventNr,
+            'firstname' => $firstNameInvoice,
+            'lastname' => $lastNameInvoice,
+            'adress' => $streetInvoice,
+            'zipcode' => $zipcodeInvoice,
+            'city' => $cityInvoice,
+            'event_nr' => $dbBtwPaymentDetailEventNrHighBtw,
             'btw_type' => $dbInvoiceBtwType,
-            'email' => $dbInvoiceEmail,
-            'extra_information' => $dbInvoiceExtraInformation,
-            'date' => $dbSubmissionDate,
+            'email' => $emailInvoice,
+            'extra_information' => $reference,
             'expiration_date' => $dbExpirationDate
         )
     );
-*/
+
     debug_to_consoleSpecialEvents('Inserted invoice with submission id: ' . $dbSubmissionId);
 /*
     $wpdb->insert($wpdb->prefix . 'special_events_payment_details',
