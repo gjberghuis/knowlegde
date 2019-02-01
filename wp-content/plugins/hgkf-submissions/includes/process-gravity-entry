@@ -10,6 +10,7 @@ $dbSubmissionDate;
 $dbSubmissionOrganization;
 $dbNumberParkingTickets;
 $dbReductionCode;
+$dbMembershipIsEnabled;
 $dbNotes;
 
 $dbInvoiceFirstName;
@@ -50,6 +51,9 @@ $dbFoodPartPriceLowBtw;
 $dbFoodPartPriceLowTotal;
 $dbFreeFieldsCollection;
 $dbParticipants;
+$dbMembershipPricePart;
+$dbMembershipPricePartBTW;
+$dbMembershipPricePartTotal;
 
 // SETTINGS VARIABLES
 $btw_high;
@@ -63,10 +67,19 @@ $btw_low_nr;
 add_action('gform_entry_created', 'processGravityEntryData', 10, form_id);
 function processGravityEntryData($entry, $form)
 {
+var_dump($entry);
+die();
     processSettings();
 
     global $dbSubmissionType;
-    if (form_id === 3) {
+    if (form_id == 3) {
+
+        if ($form['title'] == 'Aanmelden - 2019 Individueel') {
+            $dbSubmissionType = 'individu';
+        } else if ($form['title'] == 'Aanmelden - 2019 Groepsaanmelding') {
+            $dbSubmissionType = 'groep';
+        }
+
         // Check if the entry is already present in the database
         global $wpdb;
         $exists = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}submissions WHERE submission_id = '" . $entry['id'] . "'");
@@ -108,7 +121,9 @@ function processGravityEntryData($entry, $form)
 /*
  * Process functions
  */
-function processSettings(){
+function processSettings() {
+    global $price_membership;
+    $price_membership = 165;
     global $price_single_ticket;
     $price_single_ticket = 195;
     global $price_group_ticket;
@@ -143,6 +158,7 @@ function processSettings(){
     $settings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}submission_settings  where preset = 1");
 
     if($settings && $settings[0]) {
+		$price_membership =  $settings[0]->member_price_single;
         $price_single_ticket = $settings[0]->ticket_price_single;
         $price_group_ticket = $settings[0]->ticket_price_group;
         $price_parking_ticket = $settings[0]->price_parkingticket;
@@ -168,16 +184,16 @@ function processSubmission($entry)
     // Submission type
     global $dbSubmissionType;
 
-    if ($entry['1']) {
-        if (strpos(strtolower($entry['1']), 'individu') !== false) {
+  /*  if ($entry['50']) {
+        if (strpos(strtolower($entry['50']), 'individu') !== false) {
             $dbSubmissionType = 'individu';
-        } else if (strpos(strtolower($entry['1']), 'groep') !== false) {
+        } else if (strpos(strtolower($entry['50']), 'groep') !== false) {
             $dbSubmissionType = 'groep';
         } else {
             $dbSubmissionType = 'geen';
         }
-    }
-
+    }*/
+	
     global $dbSubmissionDate;
     $dbSubmissionDate = date("Y-m-d H:i:s");
 
@@ -194,6 +210,18 @@ function processSubmission($entry)
         $dbReductionCode = strtolower(trim($reductionCode));
     } else {
         $dbReductionCode = '';
+    }
+
+    global $dbMembershipIsEnabled;
+    $dbMembershipIsEnabled = false;
+    if ($dbSubmissionType == 'groep') {
+        if (!empty($entry[47]) && $entry[47] == 'Ja') {
+            $dbMembershipIsEnabled = true;
+        }
+    } else if ($dbSubmissionType == 'individu') {
+        if (!empty($entry[45]) && $entry[45] == 'Ja') {
+            $dbMembershipIsEnabled = true;
+        }
     }
 
     global $dbNotes;
@@ -238,10 +266,10 @@ function processInvoicePaymentFields($entry)
     $count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}submissions");
 
     $invoice_count = $count + 1;
-    $invoice_cost_post = 'HGKF18';
+    $invoice_cost_post = 'HGKF19';
 
     global $dbInvoiceFollowNumber;
-    $dbInvoiceFollowNumber = '2018' . str_pad($invoice_count, 4, "0", STR_PAD_LEFT);
+    $dbInvoiceFollowNumber = '2019' . str_pad($invoice_count, 4, "0", STR_PAD_LEFT);
 
     global $dbInvoiceNumber;
     $dbInvoiceNumber = $invoice_cost_post . $dbInvoiceFollowNumber;
@@ -252,7 +280,7 @@ function processInvoicePaymentFields($entry)
     $dbInvoiceFileName = date('Ymd') . '_' . $dbInvoiceNumber . '_' . (!empty($dbSubmissionOrganization) ? $dbSubmissionOrganization : $dbInvoiceLastName);
 
     global $dbInvoiceDebiteurNr;
-    $dbInvoiceDebiteurNr = $invoice_count + 16000;
+    $dbInvoiceDebiteurNr = $invoice_count + 19000;
 
     global $dbInvoiceBookNr;
     $dbInvoiceBookNr = '71';
@@ -296,6 +324,7 @@ function processParticipants($entry, $form) {
             $dbNumberParkingTickets++;
         }
     }
+   
     $dbParticipants[] = $mainParticipant;
 
     // Search for repeater fields and loop through the repeater field -> 'Meer deelnemers toevoegen'
@@ -334,7 +363,7 @@ function processParticipants($entry, $form) {
                 }
             }
             
-            if($participant['Parkeerticket (Kosten 10 euro per ticket) *'] == 'Ja') {
+            if($participant['Parkeerticket (Kosten 10 euro per ticket)'] == 'Ja') {
                 $dbNumberParkingTickets++;
             } 
 
@@ -359,7 +388,7 @@ function processPaymentFields($entry)
     } else if ($dbSubmissionType == 'individu') {
         $dbTicketPrice = $price_single_ticket;
     }
-
+ 
     // Check for reduction and change the ticket price
     global $dbReductionCode;
     global $dbParkingTicketFree;
@@ -390,6 +419,11 @@ function processPaymentFields($entry)
     global $dbParkingPricePartTotal;
     global $price_parking_ticket;
     global $btw_high;
+    global $dbMembershipPricePart;
+    global $dbMembershipPricePartBTW;
+    global $dbMembershipPricePartTotal;
+    global $price_membership;
+    global $dbMembershipIsEnabled;
 
     $dbParkingPricePart = 0;
     if ($dbNumberParkingTickets > 0) {
@@ -420,12 +454,22 @@ function processPaymentFields($entry)
     $dbTicketPricePartBtw = $dbTicketPricePart * $btw_high;
     $dbTicketPricePartTotal = $dbTicketPricePart + $dbTicketPricePartBtw;
 
-    $dbPricePartHigh = $dbTicketPricePart + $dbParkingPricePart ;
+    if ($dbMembershipIsEnabled) {
+        $dbMembershipPricePart = $price_membership;
+        $dbMembershipPricePartBTW = $dbMembershipPricePart * $btw_high;
+        $dbMembershipPricePartTotal = $dbMembershipPricePart + $dbMembershipPricePartBTW;
+    } else {
+        $dbMembershipPricePart = 0;
+        $dbMembershipPricePartBTW = 0;
+        $dbMembershipPricePartTotal = 0;
+    }
+
+    $dbPricePartHigh = $dbTicketPricePart + $dbParkingPricePart + $dbMembershipPricePart;
     $dbPricePartHighBtw = $dbPricePartHigh * $btw_high;
 
     global $dbPricePartHighTotal;
     $dbPricePartHighTotal = $dbPricePartHigh + $dbPricePartHighBtw;
-
+    
     // Calculate low btw
     // When the reduction price is smaller than the food price take the reduction price
     global $dbPricePartLow;
@@ -453,7 +497,7 @@ function processPaymentFields($entry)
     global $dbTotalBtw;
     $dbTotalBtw = $dbPricePartLowBtw + $dbPricePartHighBtw;
     global $dbTotalPrice;
-    $dbTotalPrice = ($dbTicketPrice * count($dbParticipants)) + $dbParkingPricePart;
+    $dbTotalPrice = ($dbTicketPrice * count($dbParticipants)) + $dbParkingPricePart + $dbMembershipPricePart;
 
     $rounded_total_price = number_format($dbTotalPrice * 100, 0, ',', '');
     $rounded_btw_part_low = number_format(($dbPricePartLowBtw) * 100, 0, ',', '');
@@ -529,6 +573,9 @@ function saveSubmission()
     global $dbFoodPartPriceLowBtw;
     global $dbFoodPartPriceLowTotal;
     global $dbFreeFieldsCollection;
+    global $dbMembershipPricePart;
+    global $dbMembershipPricePartBTW;
+    global $dbMembershipPricePartTotal;
 
     global $wpdb;
 
@@ -600,7 +647,10 @@ function saveSubmission()
             'total_high_total' => $dbPricePartHighTotal,
             'total' => $dbTotalPrice,
             'total_btw' => $dbTotalBtw,
-            'total_total' => $dbTotalPriceBtw
+            'total_total' => $dbTotalPriceBtw,
+            'membership_fee' => $dbMembershipPricePart,
+            'membership_fee_btw' => $dbMembershipPricePartBTW,
+            'membership_fee_total' => $dbMembershipPricePartTotal
         )
     );
 
