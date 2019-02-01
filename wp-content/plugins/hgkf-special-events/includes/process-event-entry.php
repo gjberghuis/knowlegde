@@ -2,10 +2,10 @@
 
 // GLOBAL FIELDS
 // field values of the gravity form entry
-$eventName;
+$eventId;
 $nameParticipant;
 $emailParticipant;
-$eventParticipant;
+$phoneParticipant;
 $organization;
 $nameInvoice;
 $adressInvoice;
@@ -15,21 +15,29 @@ $notes;
 $dataSharing;
 
 // settings
-$price_single_ticket;
-$btw_low_nr;
-$btw_low;
-$btw_high_nr;
-$btw_high;
-$food_price;
-$payment_detail_description_low_btw;
-$payment_detail_description_high_btw;
-$payment_detail_event_nr_low_btw;
-$payment_detail_event_nr_high_btw;
+$dbPriceSingleTicket;
+$dbBtwLowNr;
+$dbBtwLow;
+$dbBtwHighNr;
+$dbBtwHigh;
+$dbFoodPrice;
+$dbBtwPaymentDetailDescriptionLowBtw;
+$dbBtwPaymentDetailDescriptionHighBtw;
+$dbBtwPaymentDetailEventNrLowBtw;
+$dbBtwPaymentDetailEventNrHighBtw;
 $dbInvoiceExpirationDays;
 $dbInvoiceDescriptionText;
+$dbInvoiceCostPost;
+$dbInvoiceFollowNumberPrefix;
+$dbInvoiceBookNr;
+$dbInvoiceRelationNrStart;
+
+// generated fields during submission
 $dbExpirationDate;
 $dbSubmissionDate;
 $dbSubmissionId;
+
+
 
 $dbInvoiceFirstName;
 $dbInvoiceLastName;
@@ -73,22 +81,16 @@ $dbMembershipPricePart;
 $dbMembershipPricePartBTW;
 $dbMembershipPricePartTotal;
 
-// SETTINGS VARIABLES
-$btw_high;
-$btw_high_nr;
-$btw_low;
-$btw_low_nr;
 
 /*
 * Function to get entry value by label
 */
 function get_value_by_label( $form, $entry, $label ) {
+    
 	foreach ( $form['fields'] as $field ) {
-        var_dump($field);
-        echo "test    ";
-    	$lead_key = $field->label;
-		if ( strToLower( $lead_key ) == strToLower( $key ) ) {
-			return $entry[ $field->id ];
+        $lead_key = $field->label;
+		if ( strToLower( $lead_key ) == strToLower( $label ) ) {
+			return $entry[$field->id];
 		}
 	}
 	return false;
@@ -96,42 +98,45 @@ function get_value_by_label( $form, $entry, $label ) {
 
 function get_value_by_adminlabel( $form, $entry, $label ) {
 	foreach ( $form['fields'] as $field ) {
-        var_dump($field);
-        echo "test    ";
     	$lead_key = $field->adminLabel;
-		if ( strToLower( $lead_key ) == strToLower( $key ) ) {
+		if ( strToLower( $lead_key ) == strToLower( $label ) ) {
 			return $entry[ $field->id ];
 		}
 	}
 	return false;
 }
 
+function get_name_value( $form, $entry) {
+    foreach ( $form['fields'] as $field ) {
+        $lead_key = $field->label;
+		if (strToLower( $lead_key ) === 'naam' ) {
+            if ($field->type == 'name') {
+                foreach ($field->inputs as $input) {
+                    if ($input['label'] === 'Voornaam') {
+                        $name = $entry[$input['id']];
+                    }
+                    if ($input['label'] === 'Tussenvoegsel') {
+                        $name = $name . ' ' . $entry[$input['id']];
+                    }
+                    if ($input['label'] === 'Achternaam') {
+                        $name = $name . ' ' . $entry[$input['id']];
+                    }
+                }
+            }
+            return $name;
+        }
+    }
+}
+
 /*
 * Use the gravity hook to process the data to our own tables
 */
-add_action('gform_entry_created', 'processGravitySpecialEventsData', 10, form_id);
+add_action('gform_entry_created', 'processGravitySpecialEventsData', 10, 2);
 function processGravitySpecialEventsData($entry, $form)
 {
     // Check if the form has a cssClass process-event so we know we need to process this form
-    if (strpos($form['cssClass'], 'process-event') !== false) {
-        $eventName = get_value_by_label( $form, $entry, "Eventnaam" );
-        $nameParticipant = get_value_by_label( $form, $entry, "Naam" );
-        $emailParticipant = get_value_by_label( $form, $entry, "E-mailadres" );
-        $eventParticipant = get_value_by_label( $form, $entry, "Telefoon" );
-        $organization = get_value_by_label( $form, $entry, "Organisatie" );
-        $nameInvoice = get_value_by_label( $form, $entry, "T.a.v." );
-        $adressInvoice = get_value_by_label( $form, $entry, "Adres" );
-        $emailInvoice = get_value_by_label( $form, $entry, "E-mail" );
-        $reference = get_value_by_label( $form, $entry, "Referentie" );
-        $notes = get_value_by_label( $form, $entry, "Vraag of reactie" );
-        $dataSharing = get_value_by_adminLabel( $form, $entry, "Gegevensverwerking" );
-    }
-    
-    processSpecialEventsSettings();
-
-    global $dbSubmissionType;
-
-        // Check if the entry is already present in the database
+    if ($form['cssClass'] == 'process-event') {
+         // Check if the entry is already present in the database
         global $wpdb;
         $exists = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}submissions WHERE submission_id = '" . $entry['id'] . "'");
 
@@ -142,10 +147,17 @@ function processGravitySpecialEventsData($entry, $form)
 
         debug_to_consoleSpecialEvents("Adding new entry with id: " . $entry['id']);
 
+        processSpecialEventsFormFields($form, $entry);
+        debug_to_consoleSpecialEvents("Processing special event form fields");
+
         processSpecialEventsSettings();
+        debug_to_consoleSpecialEvents("Processing special event setttings completed");
 
         processSpecialEvents($entry);
-        debug_to_consoleSpecialEvents("Processing submission completed");
+        debug_to_consoleSpecialEvents("Processing special event completed");
+
+        processSpecialEventsParticipants($entry);
+        debug_to_consoleSpecialEvents("Processing special event participants completed");
 
         processInvoiceSpecialEventsPaymentFields($entry);
         debug_to_consoleSpecialEvents("Processing Invoice Payment completed");
@@ -153,11 +165,14 @@ function processGravitySpecialEventsData($entry, $form)
         processPaymentFieldsSpecialEvents($entry);
         debug_to_consoleSpecialEvents("Processing Payment completed");
 
-        processFreeFieldsSpecialEvents($entry, $form);
-        debug_to_consoleSpecialEvents("Processing Free fields completed");
+    //  processFreeFieldsSpecialEvents($entry, $form);
+    //  debug_to_consoleSpecialEvents("Processing Free fields completed");
 
         saveSubmissionSpecialEvents();
         debug_to_consoleSpecialEvents("Saving entry completed");
+    }
+
+   
 }
 
 /*
@@ -165,22 +180,69 @@ function processGravitySpecialEventsData($entry, $form)
  */
 function processSpecialEventsSettings() {
     global $wpdb;
-    $settings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}special_events_settings  where event_id = {$eventName}");
+    global $eventId;
+    global $dbPriceSingleTicket;
+    global $dbBtwLow;
+    global $dbBtwLow;
+    global $dbBtwHighNr;
+    global $dbBtwHigh;
+    global $dbFoodPrice;
+    global $dbBtwPaymentDetailDescriptionLowBtw;
+    global $dbBtwPaymentDetailDescriptionHighBtw;
+    global $dbBtwPaymentDetailEventNrLowBtw;
+    global $dbBtwPaymentDetailEventNrHighBtw;
+    global $dbInvoiceExpirationDays;
+    global $dbInvoiceDescriptionText;
+    global $dbInvoiceCostPost;
+    global $dbInvoiceFollowNumberPrefix;
+    global $dbInvoiceBookNr;
+    global $dbInvoiceRelationNrStart;
+    $settings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}special_events_settings  where event_id = '{$eventId}'");
 
     if($settings && $settings[0]) {
-        $price_single_ticket = $settings[0]->ticket_price_single;
-        $btw_low_nr = $settings[0]->btw_low_number;
-        $btw_low = $settings[0]->btw_low;
-        $btw_high_nr = $settings[0]->btw_high_number;
-        $btw_high = $settings[0]->btw_high;
-        $food_price = $settings[0]->food_price;
-        $payment_detail_description_low_btw = $settings[0]->payment_detail_description_low_btw;
-        $payment_detail_description_high_btw = $settings[0]->payment_detail_description_high_btw;
-        $payment_detail_event_nr_low_btw = $settings[0]->payment_detail_event_nr_low_btw;
-        $payment_detail_event_nr_high_btw = $settings[0]->payment_detail_event_nr_high_btw;
+        $dbPriceSingleTicket = $settings[0]->ticket_price_single;
+        $dbBtwLow = $settings[0]->btw_low_number;
+        $dbBtwLow = $settings[0]->btw_low;
+        $dbBtwHighNr = $settings[0]->btw_high_number;
+        $dbBtwHigh = $settings[0]->btw_high;
+        $dbFoodPrice = $settings[0]->food_price;
+        $dbBtwPaymentDetailDescriptionLowBtw = $settings[0]->payment_detail_description_low_btw;
+        $dbBtwPaymentDetailDescriptionHighBtw = $settings[0]->payment_detail_description_high_btw;
+        $dbBtwPaymentDetailEventNrLowBtw = $settings[0]->payment_detail_event_nr_low_btw;
+        $dbBtwPaymentDetailEventNrHighBtw = $settings[0]->payment_detail_event_nr_high_btw;
         $dbInvoiceExpirationDays = $settings[0]->invoice_expiration_days;
         $dbInvoiceDescriptionText = $settings[0]->invoice_description_text;
+        $dbInvoiceCostPost = $settings[0]->cost_post;
+        $dbInvoiceFollowNumberPrefix = $settings[0]->follow_number_prefix;
+        $dbInvoiceBookNr = $settings[0]->book_nr;
+        $dbInvoiceRelationNrStart = $settings[0]->relation_nr_start;
     }
+}
+
+function processSpecialEventsFormFields($form, $entry) {
+    global $eventId;
+    global $nameParticipant;
+    global $emailParticipant;
+    global $phoneParticipant;
+    global $organization;
+    global $nameInvoice;
+    global $adressInvoice;
+    global $emailInvoice;
+    global $reference;
+    global $notes;
+    global $dataSharing;
+
+    $eventId = get_value_by_label( $form, $entry, "Eventlabel" );
+    $nameParticipant = get_name_value( $form, $entry );
+    $emailParticipant = get_value_by_label( $form, $entry, "E-mailadres" );
+    $phoneParticipant = get_value_by_label( $form, $entry, "Telefoon" );
+    $organization = get_value_by_label( $form, $entry, "Organisatie" );
+    $nameInvoice = get_value_by_label( $form, $entry, "T.a.v." );
+    $adressInvoice = get_value_by_label( $form, $entry, "Adres" );
+    $emailInvoice = get_value_by_label( $form, $entry, "E-mail" );
+    $reference = get_value_by_label( $form, $entry, "Referentie" );
+    $notes = get_value_by_label( $form, $entry, "Vraag of reactie" );
+    $dataSharing = get_value_by_adminLabel( $form, $entry, "Gegevensverwerking" );
 }
 
 function processSpecialEvents($entry)
@@ -196,20 +258,94 @@ function processSpecialEvents($entry)
     $dbExpirationDate = date('Y-m-d H:i:s', strtotime("+" . $dbInvoiceExpirationDays . " days"));
 }
 
+
+function processSpecialEventsParticipants($entry, $form) {
+    global $dbParticipants;
+    global $dbNumberParkingTickets;
+    global $nameParticipant;
+    global $emailParticipant;
+    global $phoneParticipant;
+    $dbNumberParkingTickets = 0;
+
+    $dbParticipants = [];
+    // The main participant is the non repeater participant
+    $mainParticipant = [];
+    $mainParticipant['Naam'] = $nameParticipant;
+    $mainParticipant['E-mailadres'] = $emailParticipant;
+    $mainParticipant['Telefoon'] = $phoneParticipant;
+    
+/*
+    if (!empty($entry[44])) {
+        $mainParticipant['Parkeerticket (Kosten 10 euro per ticket) *'] = $entry[44];
+        if ($entry[44] == 'Ja') {
+            $dbNumberParkingTickets++;
+        }
+    }*/
+   
+    $dbParticipants[] = $mainParticipant;
+/*
+    // Search for repeater fields and loop through the repeater field -> 'Meer deelnemers toevoegen'
+    $repeaterID = '';
+    foreach ($form['fields'] as $key => $formField) {
+        if (get_class($formField) == 'GF_Field_Repeater') {
+            if ($formField[label] == 'deelnemers-repeater') {
+                $repeaterID = $formField[id];
+            }
+        }
+    }
+
+    // SEARCH THROUGH ENTRY FOR THE FIELD ID OF THE REPEATER
+    foreach ($entry as $key => $formEntry) {
+        // Check if the field is the repeater field
+        if ($key == $repeaterID) {
+            // Breakdown the repeater's inputs. us = un-serialized.
+            $usEntry = unserialize($formEntry);
+        }
+    }
+
+    if(is_array($usEntry) || is_object($usEntry)) {
+        foreach ($usEntry as $keyOneEntry => $oneEntry) {
+            $participant = array();
+            // MATCH UP THE FIELDS AND INPUTS
+            $singleRepeat = '';
+            foreach ($form[fields] as $key => $formField) {
+                $fieldId = $formField[id];
+                if (array_key_exists($fieldId, $oneEntry)) {
+                    $singleInput = implode(" ", $oneEntry[$fieldId]);
+                    // Only include inputs that aren't empty
+                    if (!empty($singleInput)) {
+                        $participant[$formField[label]] = $singleInput;
+                        $singleRepeat .= $formField[label] . ": " . $singleInput . ", ";
+                    }
+                }
+            }
+            
+            if($participant['Parkeerticket (Kosten 10 euro per ticket)'] == 'Ja') {
+                $dbNumberParkingTickets++;
+            } 
+
+            $dbParticipants[] = $participant;
+
+         //   array_push($repeats, $singleRepeat);
+            unset($singleRepeat);
+        }
+    }*/
+}
+
 function processInvoiceSpecialEventsPaymentFields($entry)
 {
     global $wpdb;
-
-    $count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}special_events");
-
+    global $eventId;
+  
+    $count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}special_events where event_id = '{$eventId}'"); 
     $invoice_count = $count + 1;
-    $invoice_cost_post = 'HGKF19';
 
     global $dbInvoiceFollowNumber;
-    $dbInvoiceFollowNumber = '2019' . str_pad($invoice_count, 4, "0", STR_PAD_LEFT);
+    $dbInvoiceFollowNumber = $dbInvoiceFollowNumberPrefix . str_pad($invoice_count, 4, "0", STR_PAD_LEFT);
 
+    global $dbInvoiceCostPost;
     global $dbInvoiceNumber;
-    $dbInvoiceNumber = $invoice_cost_post . $dbInvoiceFollowNumber;
+    $dbInvoiceNumber = $dbInvoiceCostPost . $dbInvoiceFollowNumber;
 
     global $dbInvoiceFileName;
     global $dbSubmissionOrganization;
@@ -217,13 +353,10 @@ function processInvoiceSpecialEventsPaymentFields($entry)
     $dbInvoiceFileName = date('Ymd') . '_' . $dbInvoiceNumber . '_' . (!empty($dbSubmissionOrganization) ? $dbSubmissionOrganization : $dbInvoiceLastName);
 
     global $dbInvoiceDebiteurNr;
-    $dbInvoiceDebiteurNr = $invoice_count + 19000;
+    $dbInvoiceDebiteurNr = $invoice_count + $dbInvoiceRelationNrStart;
 
     global $dbInvoiceBookNr;
-    $dbInvoiceBookNr = '71';
-
-    global $dbInvoiceCostPost;
-    $dbInvoiceCostPost = $invoice_cost_post;
+    $dbInvoiceBookNr = $dbInvoiceBookNr;
 
     global $dbInvoiceBtwType;
     $dbInvoiceBtwType = '2';
@@ -237,28 +370,17 @@ function processInvoiceSpecialEventsPaymentFields($entry)
 
 function processPaymentFieldsSpecialEvents($entry)
 {
-    // Calculate price of a ticket
-    global $dbTicketPrice;
-
-    global $dbSubmissionType;
-    global $price_single_ticket;
-    global $price_group_ticket;
-    if ($dbSubmissionType == 'groep') {
-        $dbTicketPrice = $price_group_ticket;
-    } else if ($dbSubmissionType == 'individu') {
-        $dbTicketPrice = $price_single_ticket;
-    }
- 
     // Calculate high btw first substract the food (low btw) and split into parking ticket and ticket
+    global $dbPriceSingleTicket;
     global $dbPricePartHigh;
     global $dbPricePartHighBtw;
     global $dbTicketPricePart;
     global $dbTicketPricePartBtw;
     global $dbTicketPricePartTotal;
-    global $btw_high;
+    global $dbBtwHigh;
 
-    global $food_price;
-    $price_ticket_ex_food = $dbTicketPrice - $food_price;
+    global $dbFoodPrice;
+    $price_ticket_ex_food = $dbPriceSingleTicket - $dbFoodPrice;
 
     // If there is a reduction price which is smaller than the food price the price part high will be below zero
     if ($price_ticket_ex_food < 0) {
@@ -267,11 +389,12 @@ function processPaymentFieldsSpecialEvents($entry)
 
     global $dbParticipants;
     $dbTicketPricePart = $price_ticket_ex_food * count($dbParticipants);
-    $dbTicketPricePartBtw = $dbTicketPricePart * $btw_high;
+
+    $dbTicketPricePartBtw = $dbTicketPricePart * $dbBtwHigh;
     $dbTicketPricePartTotal = $dbTicketPricePart + $dbTicketPricePartBtw;
 
     $dbPricePartHigh = $dbTicketPricePart + $dbParkingPricePart;
-    $dbPricePartHighBtw = $dbPricePartHigh * $btw_high;
+    $dbPricePartHighBtw = $dbPricePartHigh * $dbBtwHigh;
 
     global $dbPricePartHighTotal;
     $dbPricePartHighTotal = $dbPricePartHigh + $dbPricePartHighBtw;
@@ -279,8 +402,8 @@ function processPaymentFieldsSpecialEvents($entry)
     // Calculate low btw
     // When the reduction price is smaller than the food price take the reduction price
     global $dbPricePartLow;
-    $dbPricePartLow = $food_price;
-    if ($dbTicketPrice < $food_price) {
+    $dbPricePartLow = $dbFoodPrice;
+    if ($dbTicketPrice < $dbFoodPrice) {
         $dbPricePartLow = $dbTicketPrice;
     }
 
@@ -290,11 +413,11 @@ function processPaymentFieldsSpecialEvents($entry)
     global $dbFoodPartPriceLowBtw;
     global $dbFoodPartPriceLowTotal;
 
-    global $btw_low;
+    global $dbBtwLow;
 
     $dbPricePartLow = count($dbParticipants) * $dbPricePartLow;
     $dbFoodPartPriceLow = $dbPricePartLow;
-    $dbPricePartLowBtw = $dbPricePartLow * $btw_low;
+    $dbPricePartLowBtw = $dbPricePartLow * $dbBtwLow;
     $dbFoodPartPriceLowBtw = $dbPricePartLowBtw;
     $dbPricePartLowTotal = $dbPricePartLow + $dbPricePartLowBtw;
     $dbFoodPartPriceLowTotal = $dbPricePartLowTotal;
@@ -333,8 +456,8 @@ function processFreeFieldsSpecialEvents($entry, $form)
 
 function saveSubmissionSpecialEvents()
 {
+    global $eventId;
     global $dbSubmissionId;
-    global $dbSubmissionType;
     global $dbSubmissionDate;
     global $dbSubmissionOrganization;
     global $dbNumberParkingTickets;
@@ -385,26 +508,17 @@ function saveSubmissionSpecialEvents()
 
     global $wpdb;
 
-    $wpdb->insert($wpdb->prefix . 'submissions',
+    $wpdb->insert($wpdb->prefix . 'special_events',
         array(
             'submission_id' => $dbSubmissionId,
-            'submission_type' => $dbSubmissionType,
             'submission_date' => $dbSubmissionDate,
-            'expiration_date' => $dbExpirationDate,
-            'organization' => $dbSubmissionOrganization,
-            'price' => $dbTotalPrice,
-            'tax' => $dbTotalBtw,
-            'price_tax' => $dbTotalPriceBtw,
-            'parking_tickets' => $dbNumberParkingTickets,
-            'reduction_code' => $dbReductionCode,
-            'reduction_code_free_parking_ticket' => $dbParkingTicketFree,
-            'notes' => $dbNotes
+            'event_id' => $eventId
         )
     );
 
-    debug_to_consoleSpecialEvents('Inserted submission with id: ' . $dbSubmissionId);
-
+    debug_to_consoleSpecialEvents('Inserted into: '. $wpdb->prefix . 'special_events' . ' submission with id: ' . $dbSubmissionId);
     debug_to_consoleSpecialEvents('Insert into table: ' . $wpdb->prefix . 'special_events_invoices');
+    /*
     $wpdb->insert($wpdb->prefix . 'special_events_invoices',
         array(
             'submission_id' => $dbSubmissionId,
@@ -430,9 +544,9 @@ function saveSubmissionSpecialEvents()
             'expiration_date' => $dbExpirationDate
         )
     );
-
+*/
     debug_to_consoleSpecialEvents('Inserted invoice with submission id: ' . $dbSubmissionId);
-
+/*
     $wpdb->insert($wpdb->prefix . 'special_events_payment_details',
         array(
             'submission_id' => $dbSubmissionId,
@@ -459,23 +573,23 @@ function saveSubmissionSpecialEvents()
             'membership_fee_total' => $dbMembershipPricePartTotal
         )
     );
-
+*/
     // First payment detail: insert the entree payment detail row (with btw high)
     global $dbPricePartHighTotal;
     global $dbPricePartHigh;
     global $dbPricePartHighBtw;
-    global $btw_high_nr;
-    global $payment_detail_event_nr_high_btw;
-    global $payment_detail_description_high_btw;
+    global $dbBtwHighNr;
+    global $dbBtwPaymentDetailEventNrHighBtw;
+    global $dbBtwPaymentDetailDescriptionHighBtw;
 
-    $wpdb->insert($wpdb->prefix . 'submission_crm_details',
+    $wpdb->insert($wpdb->prefix . 'special_events_crm_details',
         array(
             'submission_id' => $dbSubmissionId,
-            'event' => $payment_detail_event_nr_high_btw,
+            'event' => $dbBtwPaymentDetailEventNrHighBtw,
             'price' => $dbPricePartHigh,
-            'btw_type' => $btw_high_nr,
+            'btw_type' => $dbBtwHighNr,
             'tax' => $dbPricePartHighBtw,
-            'row_description' => $payment_detail_description_high_btw,
+            'row_description' => $dbBtwPaymentDetailDescriptionHighBtw,
             'price_tax' => $dbPricePartHighTotal,
             'invoice_number' => $dbInvoiceNumber
         )
@@ -484,27 +598,27 @@ function saveSubmissionSpecialEvents()
     debug_to_consoleSpecialEvents('Inserted btw high in payment details table');
 
     // Second payment detail: insert the food payment detail row (with btw low)
-    global $dbPricePartLowBtw;
+  /*  global $dbPricePartLowBtw;
     global $dbPricePartLow;
     global $dbPricePartLowTotal;
-    global $btw_low_nr;
-    global $payment_detail_event_nr_low_btw;
-    global $payment_detail_description_low_btw;
-
+    global $dbBtwLowNr;
+    global $dbBtwPaymentDetailEventNrLowBtw;
+    global $dbBtwPaymentDetailDescriptionLowBtw;
+/*
     $wpdb->insert($wpdb->prefix . 'submission_crm_details',
         array(
             'submission_id' => $dbSubmissionId,
-            'event' => $payment_detail_event_nr_low_btw,
+            'event' => $dbBtwPaymentDetailEventNrLowBtw,
             'price' => $dbPricePartLow,
-            'btw_type' => $btw_low_nr,
+            'btw_type' => $dbBtwLowNr,
             'tax' => $dbPricePartLowBtw,
-            'row_description' => $payment_detail_description_low_btw,
+            'row_description' => $dbBtwPaymentDetailDescriptionLowBtw,
             'price_tax' => $dbPricePartLowTotal,
             'invoice_number' => $dbInvoiceNumber
         )
     );
-
-    debug_to_consoleSpecialEvents('Inserted btw low in payment details table');
+*/
+    //debug_to_consoleSpecialEvents('Inserted btw low in payment details table');
 
     global $dbParticipants;
     foreach ($dbParticipants as $part) {
@@ -518,21 +632,7 @@ function saveSubmissionSpecialEvents()
             )
         );
     }
-
     debug_to_consoleSpecialEvents('Inserted participants into participants table');
-
-    global $dbFreeFieldsCollection;
-    foreach ($dbFreeFieldsCollection as $freeField) {
-         $wpdb->insert($wpdb->prefix . 'submission_free_fields',
-            array(
-                'submission_id' => $dbSubmissionId,
-                'label' => $freeField['label'],
-                'value' => $freeField['value']
-            )
-        );
-    }
-
-    debug_to_consoleSpecialEvents('Inserted free fields in table');
 }
 
 function debug_to_consoleSpecialEvents($data)

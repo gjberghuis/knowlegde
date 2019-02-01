@@ -12,12 +12,12 @@ if (!class_exists('WP_List_Table')) {
     require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
 }
 
+require_once('includes/process-event-entry.php');
 require_once('includes/settings-overview.php');
 require_once('includes/submissions.php');
 require_once('includes/edit-submission.php');
 require_once('includes/participants.php');
 require_once('includes/edit-participant.php');
-require_once('includes/process-event-entry.php');
 
 $submissionCollection = [];
 
@@ -593,53 +593,54 @@ function render_edit_special_events_settings_page() {
                     $settings[0]->event_id = $_POST['event_id'];
                 }
 
-                if (!empty($_POST['ticket_price_single'])) {
+                if (!empty($_POST['ticket_price_single']) || $_POST['ticket_price_single'] === 0 || $_POST['ticket_price_single'] == '0') {
                     $settings[0]->ticket_price_single = $_POST['ticket_price_single'];
                 }
 
-                if (!empty($_POST['btw_low_number'])) {
+                if (!empty($_POST['btw_low_number']) || $_POST['btw_low_number'] === 0 || $_POST['btw_low_number'] == '0') {
                     $settings[0]->btw_low_number = $_POST['btw_low_number'];
                 }
                 
-                if (!empty($_POST['btw_low'])) {
+                if (!empty($_POST['btw_low']) || $_POST['btw_low'] === 0 || $_POST['btw_low'] == '0') {
                     $settings[0]->btw_low = $_POST['btw_low'];
                 }
                 
-                if (!empty($_POST['btw_high_number'])) {
+                if (!empty($_POST['btw_high_number'] || $_POST['btw_high_number'] === 0 || $_POST['btw_high_number'] == '0')) {
                     $settings[0]->btw_high_number = $_POST['btw_high_number'];
                 }
                 
-                if (!empty($_POST['btw_high'])) {
+                if (!empty($_POST['btw_high']) || $_POST['btw_high'] === 0 || $_POST['btw_high'] == '0') {
                     $settings[0]->btw_high = $_POST['btw_high'];
                 }
 
-                if (!empty($_POST['food_price'])) {
+                if (!empty($_POST['food_price']) || $_POST['food_price'] === 0 || $_POST['food_price'] == '0') {
                     $settings[0]->food_price = $_POST['food_price'];
                 }
 
-                if (!empty($_POST['payment_detail_description_low_btw'])) {
+                if (!empty($_POST['payment_detail_description_low_btw']) || $_POST['payment_detail_description_low_btw'] == '') {
                     $settings[0]->payment_detail_description_low_btw = $_POST['payment_detail_description_low_btw'];
                 }
 
-                if (!empty($_POST['payment_detail_description_high_btw'])) {
+                if (!empty($_POST['payment_detail_description_high_btw']) || $_POST['payment_detail_description_high_btw'] == '') {
                     $settings[0]->payment_detail_description_high_btw = $_POST['payment_detail_description_high_btw'];
                 }
 
-                if (!empty($_POST['payment_detail_event_nr_low_btw'])) {
+                if (!empty($_POST['payment_detail_event_nr_low_btw']) || $_POST['payment_detail_event_nr_low_btw'] === 0 || $_POST['payment_detail_event_nr_low_btw'] == '0') {
                     $settings[0]->payment_detail_event_nr_low_btw = $_POST['payment_detail_event_nr_low_btw'];
                 }
 
-                if (!empty($_POST['payment_detail_event_nr_high_btw'])) {
+                if (!empty($_POST['payment_detail_event_nr_high_btw']) || $_POST['payment_detail_event_nr_high_btw'] === 0 || $_POST['payment_detail_event_nr_low_btw'] == '0') {
                     $settings[0]->payment_detail_event_nr_high_btw = $_POST['payment_detail_event_nr_high_btw'];
                 }
 
-                if (!empty($_POST['invoice_expiration_days'])) {
+                if (!empty($_POST['invoice_expiration_days']) || $_POST['invoice_expiration_days'] === 0 || $_POST['invoice_expiration_days'] == '0') {
                     $settings[0]->invoice_expiration_days = $_POST['invoice_expiration_days'];
                 }
 
-                if (!empty($_POST['invoice_description_text'])) {
+                if (!empty($_POST['invoice_description_text']) || $_POST['invoice_description_text'] == '') {
                     $settings[0]->invoice_description_text = $_POST['invoice_description_text'];
                 }
+
 
                 $result = $wpdb->update($wpdb->prefix  . 'special_events_settings',
                     array(
