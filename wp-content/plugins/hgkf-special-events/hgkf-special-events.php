@@ -17,7 +17,7 @@ require_once('includes/submissions.php');
 require_once('includes/edit-submission.php');
 require_once('includes/participants.php');
 require_once('includes/edit-participant.php');
-require_once('includes/process-gravity-entry.php');
+require_once('includes/process-event-entry.php');
 
 $submissionCollection = [];
 
