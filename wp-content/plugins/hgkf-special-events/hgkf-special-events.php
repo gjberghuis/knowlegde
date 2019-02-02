@@ -14,7 +14,7 @@ if (!class_exists('WP_List_Table')) {
 
 require_once('includes/process-event-entry.php');
 require_once('includes/settings-overview.php');
-require_once('includes/submissions.php');
+require_once('includes/special-events-submissions.php');
 require_once('includes/edit-submission.php');
 require_once('includes/participants.php');
 require_once('includes/edit-participant.php');
@@ -23,12 +23,12 @@ $submissionCollection = [];
 
 function my_special_events_menu_items()
 {
-    $hookSubmissions = add_menu_page('Special events', 'Special events', 'manage_options', 'my_special_events_overview', 'render_special_events_overview_page');
-    add_submenu_page(null, 'Aanmelding bewerken', 'Aanmelding bewerken', 'manage_options', 'edit_submission', 'render_edit_special_event_submission_page');
-    add_submenu_page('my_special_events_participants_overview', 'Deelnemers', 'Deelnemers', 'manage_options', 'participants', 'render_special_events_participants_page');
-    add_submenu_page(null, 'Deelnemer bewerken', 'Deelnemer bewerken', 'manage_options', 'edit_participant', 'render_edit_special_events_participant_page');
-  //  add_submenu_page('my_special_events_overview', 'Instellingen', 'Instellingen', 'manage_options', 'settings', 'render_special_events_settings_page');
-    add_submenu_page('my_special_events_settings', 'Instellingen', 'Instellingen', 'manage_options', 'special_events_settings', 'render_special_events_settings_overview_page');
+   $hookSubmissions = add_menu_page('Specialevents', 'Specialevents', 'manage_options', 'my_special_events_overview', 'render_special_events_overview_page');
+     add_submenu_page(null, 'Aanmelding bewerken', 'Aanmelding bewerken', 'manage_options', 'edit_submission', 'render_edit_special_event_submission_page');
+    add_submenu_page('my_special_events_overview', 'Deelnemers', 'Deelnemers', 'manage_options', 'participants', 'render_special_events_participants_page');
+    // add_submenu_page(null, 'Deelnemer bewerken', 'Deelnemer bewerken', 'manage_options', 'edit_participant', 'render_edit_special_events_participant_page');
+    // add_submenu_page('my_special_events_overview', 'Instellingen', 'Instellingen', 'manage_options', 'settings', 'render_special_events_settings_page');
+    add_submenu_page('my_special_events_overview', 'Instellingen', 'Instellingen', 'manage_options', 'special_events_settings', 'render_special_events_settings_overview_page');
     add_submenu_page(null, 'Instellingen toevoegen', 'Instellingen toevoegen', 'manage_options', 'add_special_events_settings', 'render_add_special_events_settings_page');
     add_submenu_page(null, 'Instellingen bewerken', 'Instellingen bewerken', 'manage_options', 'edit_special_events_settings', 'render_edit_special_events_settings_page');
   
@@ -37,7 +37,7 @@ function my_special_events_menu_items()
 
 function add_options_special_events()
 {
-    global $myListTable;
+    global $mySpecialEventsTable;
 
     $option = 'per_page';
     $args = array(
@@ -47,62 +47,10 @@ function add_options_special_events()
     );
     add_screen_option($option, $args);
 
-    $myListTable = new My_special_events_list;
+    $mySpecialEventsTable = new My_special_events_list;
 }
 
 add_action('admin_menu', 'my_special_events_menu_items');
-
-function render_special_events_overview_page()
-{
-    wp_enqueue_script('jquery-ui-datepicker');
-    wp_register_style('jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css');
-    wp_enqueue_style('jquery-ui');
-
-    global $myListTable;
-    echo '</pre><div class="wrap"><h2>Aanmeldingen special events overzicht</h2>';
-
-    echo '<form id="date" name="date" action="" method="post">';
-        echo '<input type="hidden" name="page" value="<?php echo $_REQUEST[\'page\'] ?>" />';
-        echo '<table>';
-            echo '<tr>';
-            echo '<td>';
-            echo '<label for="from_date" style="margin-right: 20px;">Ticket prijs</label>';
-            echo '</td>';
-            echo '<td>';
-            echo '<input type="date" name="from_date" />';
-            echo '</td>';
-            echo '</tr>';
-            echo '<tr>';
-            echo '<td>';
-            echo '<label for="to_date" style="margin-right: 20px;">Code</label>';
-            echo '</td>';
-            echo '<td>';
-            echo '<input type="date" name="to_date" />';
-            echo '</td>';
-            echo '</tr>';
-            echo '<tr>';
-            echo '<td style="padding:20px;">';
-            echo '<input type="submit" value="Download deelnemers in csv" name="download_participants" />';
-            echo '</td>';
-            echo '<td style="padding:20px;">';
-            echo '<input type="submit" value="Download facturen in csv" name="download_invoices_new" />';
-            echo '</td>';
-            echo '</tr>';
-        echo '</table>';
-    echo '</form>';
-    ?>
-
-    <?php
-
-    echo '<form method="post" id="Submission" name="submissions">';
-    echo '<input type="hidden" name="page" value="' . $_REQUEST['page'] . '">';
-        $myListTable->prepare_items_special_events();
-        $myListTable->search_box('zoeken', 'search');
-        $myListTable->display();
-
-    echo '</form>';
-    echo '</div>';
-}
 
 function render_special_events_participants_page()
 {
@@ -196,7 +144,7 @@ function convert_special_events_csv()
         header('Content-Disposition: attachment; filename=' . $output_file_name);
         fputcsv($f, $header, ';');
 
-        $submissions = $wpdb->get_results("SELECT submission.*, invoice.* FROM {$wpdb->prefix}submissions  as submission INNER JOIN {$wpdb->prefix}special_events_invoices as invoice ON invoice.submission_id = submission.submission_id WHERE active < 1 OR active is NULL AND submission_date >= '" . $fromDate . "' AND submission_date <= '" . $toDate . "'");
+        $submissions = $wpdb->get_results("SELECT submission.*, invoice.* FROM {$wpdb->prefix}special_events  as submission INNER JOIN {$wpdb->prefix}special_events_invoices as invoice ON invoice.submission_id = submission.submission_id WHERE active < 1 OR active is NULL AND submission_date >= '" . $fromDate . "' AND submission_date <= '" . $toDate . "'");
 
         /* loop through array  */
         foreach ($submissions as $submission) {

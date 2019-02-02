@@ -3,6 +3,7 @@
 // GLOBAL FIELDS
 // field values of the gravity form entry
 $eventId;
+$eventName;
 $nameParticipant;
 $firstNameParticipant;
 $lastNameParticipant;
@@ -189,7 +190,7 @@ function processGravitySpecialEventsData($entry, $form)
     if ($form['cssClass'] == 'process-event') {
          // Check if the entry is already present in the database
         global $wpdb;
-        $exists = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}submissions WHERE submission_id = '" . $entry['id'] . "'");
+        $exists = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}special_events WHERE submission_id = '" . $entry['id'] . "'");
 
         if ($exists > 1) {
             debug_to_consoleSpecialEvents("Entry already exists");
@@ -232,6 +233,7 @@ function processGravitySpecialEventsData($entry, $form)
 function processSpecialEventsSettings() {
     global $wpdb;
     global $eventId;
+    global $eventName;
     global $dbPriceSingleTicket;
     global $dbBtwLow;
     global $dbBtwLow;
@@ -248,6 +250,8 @@ function processSpecialEventsSettings() {
     global $dbInvoiceFollowNumberPrefix;
     global $dbInvoiceBookNr;
     global $dbInvoiceRelationNrStart;
+    global $eventName;
+
     $settings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}special_events_settings  where event_id = '{$eventId}'");
 
     if($settings && $settings[0]) {
@@ -267,6 +271,7 @@ function processSpecialEventsSettings() {
         $dbInvoiceFollowNumberPrefix = $settings[0]->follow_number_prefix;
         $dbInvoiceBookNr = $settings[0]->book_nr;
         $dbInvoiceRelationNrStart = $settings[0]->relation_nr_start;
+        $eventName = $settings[0]->event_name;
     }
 }
 
@@ -506,6 +511,7 @@ function processFreeFieldsSpecialEvents($entry, $form)
 function saveSubmissionSpecialEvents()
 {
     global $eventId;
+    global $eventName;
     global $dbSubmissionId;
     global $dbSubmissionDate;
     global $dbSubmissionOrganization;
@@ -570,7 +576,13 @@ function saveSubmissionSpecialEvents()
         array(
             'submission_id' => $dbSubmissionId,
             'submission_date' => $dbSubmissionDate,
-            'event_id' => $eventId
+            'event_id' => $eventId,
+            'organization' => $organization,
+            'price' => $dbTotalPrice,
+            'tax' => $dbTotalBtw,
+            'price_tax' => $dbTotalPriceBtw,
+            'notes' => $notes,
+            'event_name' => $eventName
         )
     );
 

@@ -30,33 +30,33 @@ class participants_special_events_list  extends WP_List_Table
          $user_search_key = isset( $_REQUEST['s'] ) ? wp_unslash( trim( $_REQUEST['s'] ) ) : '';
 
 
-        $columns = $this->get_columns_special_events();
+        $columns = $this->get_columns();
         $hidden = array();
-        $sortable = $this->get_sortable_columns_special_events();
+        $sortable = $this->get_sortable_columns();
 
         $this->_column_headers = array($columns, $hidden, $sortable);
 
         $per_page = $this->get_items_per_page('submissions_per_page', 10);
         $current_page = $this->get_pagenum();
-        $total_items = self::record_count_special_events();
+        $total_items = self::record_count();
 
         $this->set_pagination_args(array(
             'total_items' => $total_items,                  //WE have to calculate the total number of items
             'per_page' => $per_page                     //WE have to determine how many items to show on a page
         ));
 
-        $this->items = self::get_participants_special_events($per_page, $current_page);
+        $this->items = self::get_participants($per_page, $current_page);
 
         // check if a search was performed.
         $user_search_key = isset( $_REQUEST['s'] ) ? wp_unslash( trim( $_REQUEST['s'] ) ) : '';
 
         if( $user_search_key ) {
-            $this->items = $this->filter_table_data_special_events($this->items, $user_search_key );
+            $this->items = $this->filter_table_data($this->items, $user_search_key );
         }
     }
 
     // filter the table data based on the search key
-    public function filter_table_data_special_events( $table_data, $search_key ) {
+    public function filter_table_data( $table_data, $search_key ) {
         $filtered_table_data = array_values( array_filter( $table_data, function( $row ) use( $search_key ) {
             foreach( $row as $row_val ) {
                 if( stripos( $row_val, $search_key ) !== false ) {
@@ -71,14 +71,14 @@ class participants_special_events_list  extends WP_List_Table
      * Define the columns that are going to be used in the table
      * @return array $columns, the array of columns to use with the table
      */
-    function get_columns_special_events() {
+    function get_columns() {
         return $columns= array(
         'id'=>__('Id'),
         'submission_id'=>__('Submission id'),
         'name'=>__('Naam'),
         'email'=>__('Email'), 
         'phone'=>__('Telefoon'),    
-        'parkingticket'=>__('Parkeerticket')
+        //'parkingticket'=>__('Parkeerticket')
         );
     }
 
@@ -86,7 +86,7 @@ class participants_special_events_list  extends WP_List_Table
      * Decide which columns to activate the sorting functionality on
      * @return array $sortable, the array of columns that can be sorted by the user
      */
-    public function get_sortable_columns_special_events() {
+    public function get_sortable_columns() {
         return array(
             'submission_id' => array('submission_id', false),
             'name' => array('name', false),
@@ -94,7 +94,7 @@ class participants_special_events_list  extends WP_List_Table
         );
     }
 
-    function column_id_special_events($item) {
+    /*function column_id($item) {
         $path = 'admin.php?page=edit_participant';
         $editUrl = admin_url($path);
 
@@ -103,9 +103,9 @@ class participants_special_events_list  extends WP_List_Table
         );
 
         return sprintf('%1$s %2$s', $item['id'], $this->row_actions($actions) );
-    }
+    }*/
 
-    function column_default_special_events($item, $column_name)
+    function column_default($item, $column_name)
     {
         switch ($column_name) {
             case 'id':
@@ -125,7 +125,7 @@ class participants_special_events_list  extends WP_List_Table
      *
      * @return null|string
      */
-    public static function record_count_special_events()
+    public static function record_count()
     {
         global $wpdb;
 
@@ -142,7 +142,7 @@ class participants_special_events_list  extends WP_List_Table
      *
      * @return mixed
      */
-    public static function get_participants_special_events($per_page = 100, $page_number = 1)
+    public static function get_participants($per_page = 100, $page_number = 1)
     {
         global $wpdb;
 
