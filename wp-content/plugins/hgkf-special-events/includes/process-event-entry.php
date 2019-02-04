@@ -480,7 +480,7 @@ function processPaymentFieldsSpecialEvents($entry)
     global $dbTotalBtw;
     $dbTotalBtw = $dbPricePartLowBtw + $dbPricePartHighBtw;
     global $dbTotalPrice;
-    $dbTotalPrice = ($dbTicketPrice * count($dbParticipants)) + $dbParkingPricePart + $dbMembershipPricePart;
+    $dbTotalPrice = ($dbPriceSingleTicket * count($dbParticipants)) + $dbParkingPricePart + $dbMembershipPricePart;
 
     $rounded_total_price = number_format($dbTotalPrice * 100, 0, ',', '');
     $rounded_btw_part_low = number_format(($dbPricePartLowBtw) * 100, 0, ',', '');
@@ -610,7 +610,8 @@ function saveSubmissionSpecialEvents()
             'btw_type' => $dbInvoiceBtwType,
             'email' => $emailInvoice,
             'extra_information' => $reference,
-            'expiration_date' => $dbExpirationDate
+            'expiration_date' => $dbExpirationDate,
+            'date' => $dbSubmissionDate,
         )
     );
 
@@ -665,29 +666,6 @@ function saveSubmissionSpecialEvents()
     );
 
     debug_to_consoleSpecialEvents('Inserted btw high in payment details table');
-
-    // Second payment detail: insert the food payment detail row (with btw low)
-  /*  global $dbPricePartLowBtw;
-    global $dbPricePartLow;
-    global $dbPricePartLowTotal;
-    global $dbBtwLowNr;
-    global $dbBtwPaymentDetailEventNrLowBtw;
-    global $dbBtwPaymentDetailDescriptionLowBtw;
-/*
-    $wpdb->insert($wpdb->prefix . 'submission_crm_details',
-        array(
-            'submission_id' => $dbSubmissionId,
-            'event' => $dbBtwPaymentDetailEventNrLowBtw,
-            'price' => $dbPricePartLow,
-            'btw_type' => $dbBtwLowNr,
-            'tax' => $dbPricePartLowBtw,
-            'row_description' => $dbBtwPaymentDetailDescriptionLowBtw,
-            'price_tax' => $dbPricePartLowTotal,
-            'invoice_number' => $dbInvoiceNumber
-        )
-    );
-*/
-    //debug_to_consoleSpecialEvents('Inserted btw low in payment details table');
 
     global $dbParticipants;
     foreach ($dbParticipants as $part) {
