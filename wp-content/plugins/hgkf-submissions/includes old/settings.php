@@ -38,15 +38,6 @@
 
         echo '<tr>';
         echo '<td>';
-        echo '<label for="price_membership" style="margin-right: 20px;">Prijs lidmaatschap</label>';
-        echo '</td>';
-        echo '<td>';
-        echo '<input type="number" style="width: 100px;"  value="' . $settings[0]->member_price_single . '" name="price_membership" />';
-        echo '</td>';
-        echo '</tr>';
-
-        echo '<tr>';
-        echo '<td>';
         echo '<label for="btw_low_number" style="margin-right: 20px;">BTW nummer laag tarief</label>';
         echo '</td>';
         echo '<td>';
@@ -167,7 +158,6 @@
                     array(
                         'ticket_price_single' => $_POST['ticket_price_single'],
                         'ticket_price_group' => $_POST['ticket_price_group'],
-                        'member_price_single' => $_POST['price_membership'],
                         'price_parkingticket' => $_POST['price_parkingticket'],
                         'btw_low_number' => $_POST['btw_low_number'],
                         'btw_low' => $_POST['btw_low'],

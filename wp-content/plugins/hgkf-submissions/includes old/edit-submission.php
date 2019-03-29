@@ -7,7 +7,6 @@ function render_edit_submission_page() {
         global $wpdb;
 
         /*
-
          * FIELDS
          * word1_submissions:
          * id (readonly), submission_type (readonly), submission_date (readonly), active, organization, parking_tickets, notes
@@ -16,18 +15,11 @@ function render_edit_submission_page() {
          * submission_id (readonly), number (readonly), firstname, lastname, adress, zipcode, city, email, extra_information
          *
          */
-        $sql = "SELECT submission.id, submission.submission_id FROM {$wpdb->prefix}submissions AS submission INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id WHERE id = " . $_GET['id'];
-        
-        //$sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_type, submission.submission_date, submission.organization, invoice.firstname, invoice.lastname, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, submission.parking_tickets, submission.reduction_code, submission.notes FROM {$wpdb->prefix}submissions AS submission INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id WHERE id = " . $_GET['id'];
-      //$sql = "SELECT id, submission_id FROM {$wpdb->prefix}submissions WHERE id = " . $_GET['id'];
+        $sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_type, submission.submission_date, submission.organization, invoice.firstname, invoice.lastname, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, submission.parking_tickets, submission.reduction_code, submission.notes FROM {$wpdb->prefix}submissions AS submission INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id WHERE id = " . $_GET['id'];
 
         $submission = $wpdb->get_results($sql, 'ARRAY_A');
      
-        echo " count: " . count($submission);
-        var_dump($submission);
-        die();
-        if (count($submission) > 0) {
-   
+        if (count($submission ) > 0) {
             $freeFieldResults = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}submission_free_fields WHERE submission_id = " . $submission[0]['submission_id']);
 
             if (isset($_POST['save_submission'])) {

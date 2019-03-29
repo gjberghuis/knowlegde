@@ -34,7 +34,6 @@ class My_submission_list extends WP_List_Table
             case 'parking_tickets':
             case 'reduction_code':
             case 'notes':
-            case 'kennisclub':
             case 'numberOfParticipants':
                 return $item[$column_name];
                 
@@ -179,19 +178,18 @@ class My_submission_list extends WP_List_Table
             'numberOfParticipants' => __('Aantal deelnemers', 'mylisttable'),
             'submission_date' => __('Inzend datum', 'mylisttable'),
             'organization' => __('Organisatie', 'mylisttable'),
-            //'firstname' => __('Voornaam', 'mylisttable'),
+            'firstname' => __('Voornaam', 'mylisttable'),
             'lastname' => __('Achternaam', 'mylisttable'),
-            //'adress' => __('Adres', 'mylisttable'),
-            //'zipcode' => __('Postcode', 'mylisttable'),
+            'adress' => __('Adres', 'mylisttable'),
+            'zipcode' => __('Postcode', 'mylisttable'),
             'city' => __('Plaats', 'mylisttable'),
-            //'email' => __('Email', 'mylisttable'),
+            'email' => __('Email', 'mylisttable'),
             'extra_information' => __('Extra informatie', 'mylisttable'),
             'price' => __('Prijs excl. Btw', 'mylisttable'),
-            //'price_tax' => __('Prijs incl. Btw', 'mylisttable'),
+            'price_tax' => __('Prijs incl. Btw', 'mylisttable'),
             'parking_tickets' => __('Parkeertickets', 'mylisttable'),
             'reduction_code' => __('Kortingscode', 'mylisttable'),
-            'notes' => __('Opmerkingen', 'mylisttable'),
-            'kennisclub' => __('Kennisclub', 'mylisttable')
+            'notes' => __('Opmerkingen', 'mylisttable')
         );
         return $columns;
     }
@@ -202,8 +200,7 @@ class My_submission_list extends WP_List_Table
             'submission_id' => array('submission_id', false),
             'number' => array('number', false),
             'submission_type' => array('submission_type', false),
-            'submission_date' => array('submission_date', false),
-            'kennisclub' => array('kennisclub', false)
+            'submission_date' => array('submission_date', false)
         );
         return $sortable_columns;
     }
@@ -279,15 +276,9 @@ class My_submission_list extends WP_List_Table
         $sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_type, submission.submission_date, 
 submission.organization, invoice.firstname, invoice.lastname, submission.price, submission.price_tax, submission.parking_tickets, submission.reduction_code, 
 submission.notes, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, 
-(SELECT COUNT(*) FROM {$wpdb->prefix}submission_participants p WHERE p.submission_id = invoice.submission_id) as numberOfParticipants, 
-free_fields.value as kennisclub
+(SELECT COUNT(*) FROM {$wpdb->prefix}submission_participants p WHERE p.submission_id = invoice.submission_id) as numberOfParticipants
 FROM {$wpdb->prefix}submissions AS submission 
-INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id
-LEFT JOIN (
-    select ff.label, ff.value, ff.submission_id from {$wpdb->prefix}submission_free_fields as ff 
-    where ff.label = 'Kennisclub' 
-    
-    ) AS free_fields ON free_fields.submission_id = submission.submission_id";
+INNER JOIN {$wpdb->prefix}submission_invoices AS invoice ON invoice.submission_id = submission.submission_id";
 
         if (!empty($_REQUEST['orderby'])) {
             $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);

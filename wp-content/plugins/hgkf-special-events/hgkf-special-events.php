@@ -24,7 +24,7 @@ function my_special_events_menu_items()
 {
    $hookSubmissions = add_menu_page('Special events', 'Special events', 'manage_options', 'my_special_events_overview', 'render_special_events_overview_page');
      add_submenu_page(null, 'Aanmelding bewerken', 'Aanmelding bewerken', 'manage_options', 'edit_special_event_submission', 'render_edit_special_event_submission_page');
-    add_submenu_page('my_special_events_overview', 'Deelnemers', 'Deelnemers', 'manage_options', 'participants', 'render_special_events_participants_page');
+    add_submenu_page('my_special_events_overview', 'Deelnemers', 'Deelnemers', 'manage_options', 'special_events_participants', 'render_special_events_participants_page');
     // add_submenu_page(null, 'Deelnemer bewerken', 'Deelnemer bewerken', 'manage_options', 'edit_participant', 'render_edit_special_events_participant_page');
     // add_submenu_page('my_special_events_overview', 'Instellingen', 'Instellingen', 'manage_options', 'settings', 'render_special_events_settings_page');
     add_submenu_page('my_special_events_overview', 'Instellingen', 'Instellingen', 'manage_options', 'special_events_settings', 'render_special_events_settings_overview_page');
@@ -69,9 +69,9 @@ add_action('admin_init', 'convert_special_events_csv');
 
 function convert_special_events_csv()
 { 
-    if (isset($_POST['download_participants']) || isset($_POST['download_invoices_new'])) {
-        $downloadParticipantsFields = array('submission_id', 'submission_type','submission_date','organization','reduction_code','notes');
-        $downloadInvoicesFields = array('submission_date','organization','reduction_code','notes','book_nr','debiteur_nr','cost_post','description','follow_nr',
+    if (isset($_POST['download_special_events_participants']) || isset($_POST['download_special_events_invoices_new'])) {
+        $downloadParticipantsFields = array('submission_id','submission_date','event_name','organization','notes');
+        $downloadInvoicesFields = array('submission_date','event_name','organization','notes','book_nr','debiteur_nr','cost_post','description','follow_nr',
         'firstname','lastname','adress','zipcode','city','email','extra_information','expiration_days');
    
         $date = '2016-11-01';
@@ -86,7 +86,7 @@ function convert_special_events_csv()
         }
 
         $filenamePrefix = 'facturen_';
-        if (isset($_POST['download_participants'])) {
+        if (isset($_POST['download_special_events_participants'])) {
             $filenamePrefix = 'deelnemers_';
         }
         $output_file_name = $filenamePrefix . $fromDate . '_' . $toDate . '.csv';
@@ -94,25 +94,25 @@ function convert_special_events_csv()
 
         global $wpdb;
 
-        foreach ($wpdb->get_col("DESC " . $wpdb->prefix . 'submissions', 0) as $column_name) {
-            if (isset($_POST['download_participants']) && in_array($column_name, $downloadParticipantsFields)) {
+        foreach ($wpdb->get_col("DESC " . $wpdb->prefix . 'special_events', 0) as $column_name) {
+            if (isset($_POST['download_special_events_participants']) && in_array($column_name, $downloadParticipantsFields)) {
                 $header[] = $column_name;
-            } elseif (isset($_POST['download_invoices_new']) && in_array($column_name, $downloadInvoicesFields)) {
+            } elseif (isset($_POST['download_special_events_invoices_new']) && in_array($column_name, $downloadInvoicesFields)) {
                 $header[] = $column_name;
             }
         }
 
         foreach ($wpdb->get_col("DESC " . $wpdb->prefix . 'special_events_invoices', 0) as $column_name) {
             if ($column_name != 'submission_id') {
-                if (isset($_POST['download_participants']) && in_array($column_name, $downloadParticipantsFields)) {
+                if (isset($_POST['download_special_events_participants']) && in_array($column_name, $downloadParticipantsFields)) {
                     $header[] = $column_name;
-                } elseif (isset($_POST['download_invoices_new']) && in_array($column_name, $downloadInvoicesFields)) {
+                } elseif (isset($_POST['download_special_events_invoices_new']) && in_array($column_name, $downloadInvoicesFields)) {
                     $header[] = $column_name;
                 }
             }
         }
 
-        if (isset($_POST['download_participants'])) {
+        if (isset($_POST['download_special_events_participants'])) {
             $header[] = "participant_firstname";
             $header[] = "participant_lastname";
             $header[] = "participant_email";
@@ -130,7 +130,7 @@ function convert_special_events_csv()
             $header[] = "free_field_5_value";
             $header[] = "free_field_6_label";
             $header[] = "free_field_6_value";*/
-        } elseif (isset($_POST['download_invoices_new'])) {
+        } elseif (isset($_POST['download_special_events_invoices_new'])) {
             $header[] = "payment_event";
             $header[] = "payment_row_description";
             $header[] = "payment_price";
@@ -143,16 +143,26 @@ function convert_special_events_csv()
         header('Content-Disposition: attachment; filename=' . $output_file_name);
         fputcsv($f, $header, ';');
 
-        $submissions = $wpdb->get_results("SELECT submission.*, invoice.* FROM {$wpdb->prefix}special_events  as submission INNER JOIN {$wpdb->prefix}special_events_invoices as invoice ON invoice.submission_id = submission.submission_id WHERE active < 1 OR active is NULL AND submission_date >= '" . $fromDate . "' AND submission_date <= '" . $toDate . "'");
+        $sql = "SELECT submission.*, invoice.* FROM {$wpdb->prefix}special_events  as submission INNER JOIN {$wpdb->prefix}special_events_invoices as invoice ON invoice.submission_id = submission.submission_id WHERE (active < 1 OR active is NULL) AND submission.submission_date >= '" . $fromDate . "' AND submission.submission_date <= '" . $toDate . "'";
+        
+        //Retrieve $customvar for use in query to get items.
+        $event_name = ( isset($_REQUEST['event_name']) ? $_REQUEST['event_name'] : '');
+        if($event_name != '') {
+            $search_custom_vars= " AND submission.event_name = '" . esc_sql( $wpdb->esc_like( $event_name ) ) . "'";
+        } else	{
+            $search_custom_vars = '';
+        }
+
+        $submissions = $wpdb->get_results($sql . $search_custom_vars);
 
         /* loop through array  */
         foreach ($submissions as $submission) {
             $submissionTempArray = (array)$submission;
             $submissionArray = $submissionTempArray;
             foreach ($submissionTempArray as $key => $value) {
-                if (isset($_POST['download_participants']) && !in_array($key, $downloadParticipantsFields)) {
+                if (isset($_POST['download_special_events_participants']) && !in_array($key, $downloadParticipantsFields)) {
                     unset($submissionArray[$key]);
-                } elseif (isset($_POST['download_invoices_new']) && !in_array($key, $downloadInvoicesFields)) {
+                } elseif (isset($_POST['download_special_events_invoices_new']) && !in_array($key, $downloadInvoicesFields)) {
                     unset($submissionArray[$key]);
                 }
             }
@@ -167,7 +177,7 @@ function convert_special_events_csv()
                 $submissionArray['tax'] = number_format($submissionArray['tax'], 2, ',', '');
             }
 
-            if (isset($_POST['download_participants'])) {
+            if (isset($_POST['download_special_events_participants'])) {
                 $submissionId = $submissionTempArray['submission_id'];
 
                 $submissionsOParticipants = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}special_events_participants where submission_id = " . $submissionId);
@@ -211,9 +221,9 @@ function convert_special_events_csv()
 
                  /** default php csv handler **/
                
-            } elseif (isset($_POST['download_invoices_new'])) {
+            } elseif (isset($_POST['download_special_events_invoices_new'])) {
                 $submissionId = $submissionTempArray['submission_id'];
-                $submissionPaymentDetails = $wpdb->get_results("SELECT event as payment_event, row_description as payment_row_description, price as payment_price,btw_type as payment_btw_type, tax as payment_tax FROM {$wpdb->prefix}submission_crm_details where submission_id = " . $submissionId);
+                $submissionPaymentDetails = $wpdb->get_results("SELECT event as payment_event, row_description as payment_row_description, price as payment_price,btw_type as payment_btw_type, tax as payment_tax FROM {$wpdb->prefix}special_events_crm_details where submission_id = " . $submissionId);
 
                  foreach ($submissionPaymentDetails as $paymentDetail) {
                     $paymentArray = (array)$paymentDetail;
@@ -341,6 +351,26 @@ function render_add_special_events_settings_page() {
             $invoice_description_text  = $_POST['invoice_description_text'];
         }
 
+        $invoice_book_nr = '';
+        if (!empty($_POST['payment_detail_event_book_nr']) || $_POST['payment_detail_event_book_nr'] == '') {
+            $invoice_book_nr = $_POST['payment_detail_event_book_nr'];
+        }
+        
+        $relation_nr_start = '';
+        if (!empty($_POST['payment_detail_event_relation_nr_start']) || $_POST['payment_detail_event_relation_nr_start'] == '') {
+            $relation_nr_start = $_POST['payment_detail_event_relation_nr_start'];
+        }
+        
+        $cost_post = '';
+        if (!empty($_POST['payment_detail_event_cost_post']) || $_POST['payment_detail_event_cost_post'] == '') {
+            $cost_post = $_POST['payment_detail_event_cost_post'];
+        }
+        
+        $follow_numer_prefix = '';
+        if (!empty($_POST['payment_detail_event_follow_prefix']) || $_POST['payment_detail_event_follow_prefix'] == '') {
+            $follow_number_prefix = $_POST['payment_detail_event_follow_prefix'];
+        }
+
         global $wpdb;
         $result = $wpdb->insert($wpdb->prefix .'special_events_settings', array(
             'event_name' => $event_name,
@@ -356,9 +386,12 @@ function render_add_special_events_settings_page() {
             'payment_detail_event_nr_low_btw' => $payment_detail_event_nr_low_btw,
             'payment_detail_event_nr_high_btw' => $payment_detail_event_nr_high_btw,
             'invoice_expiration_days' => $invoice_expiration_days,
-            'invoice_description_text' => $invoice_description_text),
-            array( '%s', '%s' ) )
-            ;
+            'invoice_description_text' => $invoice_description_text,
+            'invoice_book_nr' => $invoice_book_nr,
+            'relation_nr_start' => $relation_nr_start,
+            'cost_post' => $cost_post,
+            'follow_number_prefix' => $follow_number_prefix),
+            array( '%s', '%s' ));
 
         if ($result > 0) {
             $path = 'admin.php?page=special_events_settings';
@@ -495,6 +528,42 @@ function render_add_special_events_settings_page() {
 
     echo '<tr>';
     echo '<td>';
+    echo '<label for="payment_detail_event_cost_post" style="margin-right: 20px;">Exact: kostenplaats</label>';
+    echo '</td>';
+    echo '<td>';
+    echo '<input type="text" style="width: 100px;" name="payment_detail_event_cost_post" />';
+    echo '</td>';
+    echo '</tr>';
+
+    echo '<tr>';
+    echo '<td>';
+    echo '<label for="payment_detail_event_book_nr" style="margin-right: 20px;">Exact: boeknummer</label>';
+    echo '</td>';
+    echo '<td>';
+    echo '<input type="text" style="width: 100px;" name="payment_detail_event_book_nr" />';
+    echo '</td>';
+    echo '</tr>';
+
+    echo '<tr>';
+    echo '<td>';
+    echo '<label for="payment_detail_event_follow_prefix" style="margin-right: 20px;">Factuur: prefix factuurnummer</label>';
+    echo '</td>';
+    echo '<td>';
+    echo '<input type="text" style="width: 100px;" name="payment_detail_event_follow_prefix" />';
+    echo '</td>';
+    echo '</tr>';
+
+    echo '<tr>';
+    echo '<td>';
+    echo '<label for="payment_detail_event_relation_nr_start" style="margin-right: 20px;">Factuur: relatienummer</label>';
+    echo '</td>';
+    echo '<td>';
+    echo '<input type="text" style="width: 100px;" name="payment_detail_event_relation_nr_start" />';
+    echo '</td>';
+    echo '</tr>';
+
+    echo '<tr>';
+    echo '<td>';
     echo '<label for="invoice_expiration_days" style="margin-right: 20px;">Factuur: betalingstermijn (in dagen)</label>';
     echo '</td>';
     echo '<td>';
@@ -529,8 +598,8 @@ function render_edit_special_events_settings_page() {
         $settings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}special_events_settings WHERE id = " . $_GET['id']);
 
         if (count($settings) > 0) {
+          
             if (isset($_POST['save_special_events_settings'])) {
-            
                 if (!empty($_POST['event_name'])) {
                     $settings[0]->event_name = $_POST['event_name'];
                 }
@@ -586,6 +655,22 @@ function render_edit_special_events_settings_page() {
                 if (!empty($_POST['invoice_description_text']) || $_POST['invoice_description_text'] == '') {
                     $settings[0]->invoice_description_text = $_POST['invoice_description_text'];
                 }
+                
+                if (!empty($_POST['payment_detail_event_book_nr']) || $_POST['payment_detail_event_book_nr'] == '') {
+                    $settings[0]->book_nr = $_POST['payment_detail_event_book_nr'];
+                }
+                
+                if (!empty($_POST['payment_detail_event_relation_nr_start']) || $_POST['payment_detail_event_relation_nr_start'] == '') {
+                    $settings[0]->relation_nr_start = $_POST['payment_detail_event_relation_nr_start'];
+                }
+                
+                if (!empty($_POST['payment_detail_event_cost_post']) || $_POST['payment_detail_event_cost_post'] == '') {
+                    $settings[0]->cost_post = $_POST['payment_detail_event_cost_post'];
+                }
+                
+                if (!empty($_POST['payment_detail_event_follow_prefix']) || $_POST['payment_detail_event_follow_prefix'] == '') {
+                    $settings[0]->follow_number_prefix = $_POST['payment_detail_event_follow_prefix'];
+                }
 
 
                 $result = $wpdb->update($wpdb->prefix  . 'special_events_settings',
@@ -603,7 +688,12 @@ function render_edit_special_events_settings_page() {
                         'payment_detail_event_nr_low_btw' => $settings[0]->payment_detail_event_nr_low_btw,
                         'payment_detail_event_nr_high_btw' => $settings[0]->payment_detail_event_nr_high_btw,
                         'invoice_expiration_days' => $settings[0]->invoice_expiration_days,
-                        'invoice_description_text' => $settings[0]->invoice_description_text),
+                        'invoice_description_text' => $settings[0]->invoice_description_text,
+                        'book_nr' => $settings[0]->book_nr,
+                        'relation_nr_start' => $settings[0]->relation_nr_start,
+                        'cost_post' => $settings[0]->cost_post,
+                        'follow_number_prefix' => $settings[0]->follow_number_prefix,
+                    ),
                     array('id' => $settings[0]->id));
 
                 if ($result > 0) {
@@ -657,7 +747,7 @@ function render_edit_special_events_settings_page() {
             echo '</tr>';
         
             echo '<tr><td><br/></td></tr>';
-        
+        /*
             echo '<tr>';
             echo '<td>';
             echo '<label for="btw_low_number" style="margin-right: 20px;">BTW nummer laag</label>';
@@ -666,7 +756,8 @@ function render_edit_special_events_settings_page() {
             echo '<input type="number" style="width:100px;" name="btw_low_number" value="' . $settings[0]->btw_low_number . '" />';
             echo '</td>';
             echo '</tr>';
-        
+        */
+        /*
             echo '<tr>';
             echo '<td>';
             echo '<label for="btw_low" style="margin-right: 20px;">BTW laag tarief</label>';
@@ -675,7 +766,7 @@ function render_edit_special_events_settings_page() {
             echo '<input type="number" style="width: 100px;" step="0.01" name="btw_low" value="' . $settings[0]->btw_low . '" />';
             echo '</td>';
             echo '</tr>';
-        
+        */
             echo '<tr>';
             echo '<td>';
             echo '<label for="btw_high_number" style="margin-right: 20px;">BTW nummer hoog tarief</label>';
@@ -702,7 +793,7 @@ function render_edit_special_events_settings_page() {
             echo '<input type="number" style="width: 100px;" name="food_price" step="0.01" value="' . $settings[0]->food_price . '" />';
             echo '</td>';
             echo '</tr>';
-        
+        /*
             echo '<tr>';
             echo '<td>';
             echo '<label for="payment_detail_description_low_btw" style="margin-right: 20px;">Exact: beschrijving laag btw</label>';
@@ -711,7 +802,7 @@ function render_edit_special_events_settings_page() {
             echo '<input type="text" style="width: 600px;" name="payment_detail_description_low_btw" value="' . $settings[0]->payment_detail_description_low_btw . '" />';
             echo '</td>';
             echo '</tr>';
-        
+        */
             echo '<tr>';
             echo '<td>';
             echo '<label for="payment_detail_description_high_btw" style="margin-right: 20px;">Exact: beschrijving hoog btw</label>';
@@ -720,7 +811,7 @@ function render_edit_special_events_settings_page() {
             echo '<input type="text" style="width: 600px;" name="payment_detail_description_high_btw" value="' . $settings[0]->payment_detail_description_high_btw . '" />';
             echo '</td>';
             echo '</tr>';
-        
+        /*
             echo '<tr>';
             echo '<td>';
             echo '<label for="payment_detail_event_nr_low_btw" style="margin-right: 20px;">Exact: evenement nummer laag btw</label>';
@@ -729,7 +820,7 @@ function render_edit_special_events_settings_page() {
             echo '<input type="text" style="width: 100px;" name="payment_detail_event_nr_low_btw" value="' . $settings[0]->payment_detail_event_nr_low_btw . '" />';
             echo '</td>';
             echo '</tr>';
-        
+        */
             echo '<tr>';
             echo '<td>';
             echo '<label for="payment_detail_event_nr_high_btw" style="margin-right: 20px;">Exact: evenement nummer hoog btw</label>';
@@ -738,6 +829,42 @@ function render_edit_special_events_settings_page() {
             echo '<input type="text" style="width: 100px;" name="payment_detail_event_nr_high_btw" value="' . $settings[0]->payment_detail_event_nr_high_btw . '" />';
             echo '</td>';
             echo '</tr>';
+            
+        echo '<tr>';
+        echo '<td>';
+        echo '<label for="payment_detail_event_cost_post" style="margin-right: 20px;">Exact: kostenplaats</label>';
+        echo '</td>';
+        echo '<td>';
+        echo '<input type="text" style="width: 100px;"  value="' . $settings[0]->cost_post . '" name="payment_detail_event_cost_post" />';
+        echo '</td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<td>';
+        echo '<label for="payment_detail_event_book_nr" style="margin-right: 20px;">Exact: boeknummer</label>';
+        echo '</td>';
+        echo '<td>';
+        echo '<input type="text" style="width: 100px;"  value="' . $settings[0]->book_nr . '" name="payment_detail_event_book_nr" />';
+        echo '</td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<td>';
+        echo '<label for="payment_detail_event_follow_prefix" style="margin-right: 20px;">Factuur: prefix factuurnummer</label>';
+        echo '</td>';
+        echo '<td>';
+        echo '<input type="text" style="width: 100px;"  value="' . $settings[0]->follow_number_prefix . '" name="payment_detail_event_follow_prefix" />';
+        echo '</td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<td>';
+        echo '<label for="payment_detail_event_relation_nr_start" style="margin-right: 20px;">Factuur: relatienummer</label>';
+        echo '</td>';
+        echo '<td>';
+        echo '<input type="text" style="width: 100px;"  value="' . $settings[0]->relation_nr_start . '" name="payment_detail_event_relation_nr_start" />';
+        echo '</td>';
+        echo '</tr>';
         
             echo '<tr>';
             echo '<td>';

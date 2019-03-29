@@ -31,10 +31,10 @@ function render_special_events_overview_page()
             echo '</tr>';
             echo '<tr>';
             echo '<td style="padding:20px;">';
-            echo '<input type="submit" value="Download deelnemers in csv" name="download_participants" />';
+            echo '<input type="submit" value="Download deelnemers in csv" name="download_special_events_participants" />';
             echo '</td>';
             echo '<td style="padding:20px;">';
-            echo '<input type="submit" value="Download facturen in csv" name="download_invoices_new" />';
+            echo '<input type="submit" value="Download facturen in csv" name="download_special_events_invoices_new" />';
             echo '</td>';
             echo '</tr>';
         echo '</table>';
@@ -47,6 +47,7 @@ function render_special_events_overview_page()
     echo '<input type="hidden" name="page" value="' . $_REQUEST['page'] . '">';
         $mySpecialEventsTable->prepare_items_special_events();
         $mySpecialEventsTable->search_box('zoeken', 'search');
+        $mySpecialEventsTable->views();
         $mySpecialEventsTable->display();
 
     echo '</form>';
@@ -65,6 +66,29 @@ class My_special_events_list extends WP_List_Table
         ));
         add_action('admin_head', array($this, 'admin_header'));
     }
+    
+	protected function get_views() { 
+         $views = array();
+         $current = ( !empty($_REQUEST['event_name']) ? $_REQUEST['event_name'] : 'Alle');
+   
+         global $wpdb;
+         $eventNames = $wpdb->get_results("SELECT DISTINCT event_name from {$wpdb->prefix}special_events");
+
+         //All link
+         $class = ($current == 'all' ? ' class="current"' :'');
+         $all_url = remove_query_arg('event_name');
+         $views['all'] = "<a href='{$all_url }' {$class} >Alle</a>";
+
+         foreach ($eventNames as $eventName) {
+            $label = $eventName->event_name;
+              
+            $foo_url = add_query_arg('event_name', $label);
+            $class = ($current == $label ? ' class="current"' :'');
+            $views[$label] = "<a href='{$foo_url}' {$class} >" . $label . "</a>"; 
+         }
+   
+         return $views;
+      }
 
     function column_default($item, $column_name)
     {
@@ -320,12 +344,21 @@ class My_special_events_list extends WP_List_Table
     public static function get_submissions_special_events($per_page = 5, $page_number = 1)
     {
         global $wpdb;
+
+        //Retrieve $customvar for use in query to get items.
+        $event_name = ( isset($_REQUEST['event_name']) ? $_REQUEST['event_name'] : '');
+        if($event_name != '') {
+            $search_custom_vars= "AND submission.event_name LIKE '" . esc_sql( $wpdb->esc_like( $event_name ) ) . "'";
+        } else	{
+            $search_custom_vars = '';
+        }
+
         $sql = "SELECT submission.id, invoice.submission_id, invoice.number, submission.active, submission.submission_date, 
-submission.organization, invoice.firstname, invoice.lastname, submission.price, submission.price_tax, 
-submission.notes, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, submission.event_name,
-(SELECT COUNT(*) FROM {$wpdb->prefix}special_events_participants p WHERE p.submission_id = invoice.submission_id) as numberOfParticipants 
-FROM {$wpdb->prefix}special_events AS submission 
-INNER JOIN {$wpdb->prefix}special_events_invoices AS invoice ON invoice.submission_id = submission.submission_id";
+        submission.organization, invoice.firstname, invoice.lastname, submission.price, submission.price_tax, 
+        submission.notes, invoice.adress, invoice.zipcode, invoice.city, invoice.email, invoice.extra_information, submission.event_name,
+        (SELECT COUNT(*) FROM {$wpdb->prefix}special_events_participants p WHERE p.submission_id = invoice.submission_id) as numberOfParticipants 
+        FROM {$wpdb->prefix}special_events AS submission 
+        INNER JOIN {$wpdb->prefix}special_events_invoices AS invoice ON invoice.submission_id = submission.submission_id WHERE 1=1 {$search_custom_vars}";
 
         if (!empty($_REQUEST['orderby'])) {
             $sql .= ' ORDER BY ' . esc_sql($_REQUEST['orderby']);
